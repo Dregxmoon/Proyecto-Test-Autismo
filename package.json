@@ -1,9 +1,7 @@
 {
   "name": "aq50-universitario",
   "version": "1.0.0",
-  "scripts": {
-    "dev": "vercel dev"
-  },
+  "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
   }

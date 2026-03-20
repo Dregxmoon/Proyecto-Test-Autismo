@@ -16,7 +16,10 @@
 > Esta app nació como un chiste universitario — nada más. Tener un puntaje alto **no significa** que tengas autismo, y tener uno bajo **no significa** que seas más "normal" que nadie. El espectro autista es un tema serio que merece respeto.
 >
 > Si tu resultado te genera curiosidad o preocupación, habla con un profesional de salud mental. Este test **no es un diagnóstico clínico**.
-<img width="1200" height="900" alt="image" src="https://github.com/user-attachments/assets/eb9d9f54-026e-4347-a372-9e9c30eeb657" />
+
+<div align="center">
+       <img width="600" height="450" alt="image" src="https://github.com/user-attachments/assets/eb9d9f54-026e-4347-a372-9e9c30eeb657" />
+</div>
 
 ---
 
@@ -261,5 +264,12 @@ create policy "Bloquear acceso publico results" on results for all using (false)
 Baron-Cohen, S., Wheelwright, S., Skinner, R., Martin, J., & Clubley, E. (2001). *The Autism-Spectrum Quotient (AQ): Evidence from Asperger Syndrome/High-Functioning Autism, Males and Females, Scientists and Mathematicians.* Journal of Autism and Developmental Disorders, 31(1), 5–17.
 
 ---
-
+<div align="center">
 *Hecho con 💜 como broma en la escuela o((>ω< ))o. Trátalo como tal.*
+       
+</div>
+<div align="center">
+       <img width="368" height="368" alt="image" src="https://github.com/user-attachments/assets/d827a6be-ec4d-4e9a-9df5-da44c832b6e5" />
+</div>
+
+

@@ -422,6 +422,163 @@ function setBtnLoad(id, loading) {
 }
 
 render();
+
+/* easter eggs -------------------------------------------------- */
+
+// ── Imágenes (cambia estas URLs por las que encuentres) ──────────
+const EGG_IMGS = {
+  toga:  'https://ih0.redbubble.net/image.618316466.8726/st%2Csmall%2C215x235-pad%2C210x230%2Cf8f8f8.u1.jpg',   // puntaje alto
+  miku:  'https://www.line-stickers.com/wp-content/uploads/2020/04/Hatsune-Miku-All-Together-.png',   // konami code
+  teto:  'https://i.pinimg.com/originals/4b/97/3c/4b973c327fc0361d0f913758e2bbe621.png',   // click secreto
+};
+
+// ── Overlay helper ───────────────────────────────────────────────
+function showOverlay({ img, emoji, msg, duration = 3000, shake = false, rain = false }) {
+  const old = document.getElementById('egg-overlay');
+  if (old) old.remove();
+
+  const div = document.createElement('div');
+  div.id = 'egg-overlay';
+  div.style.cssText = `
+    position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;pointer-events:none;
+    background:rgba(0,0,0,0.55);animation:eggFadeIn 0.3s ease;
+  `;
+
+  if (rain) spawnRain(div);
+
+  const box = document.createElement('div');
+  box.style.cssText = `
+    background:#fff;border-radius:20px;padding:1.5rem 2rem;text-align:center;
+    max-width:320px;animation:eggPop 0.4s cubic-bezier(.175,.885,.32,1.275);
+    ${shake ? 'animation:eggPop 0.4s cubic-bezier(.175,.885,.32,1.275),eggShake 0.5s 0.4s ease;' : ''}
+  `;
+
+  if (img) {
+    const i = document.createElement('img');
+    i.src = img;
+    i.style.cssText = 'width:180px;height:180px;object-fit:contain;margin-bottom:0.75rem;display:block;margin:0 auto 0.75rem;';
+    i.onerror = () => { i.style.display='none'; };
+    box.appendChild(i);
+  }
+
+  if (emoji) {
+    const e = document.createElement('div');
+    e.style.cssText = 'font-size:64px;margin-bottom:0.5rem;';
+    e.textContent = emoji;
+    box.appendChild(e);
+  }
+
+  const p = document.createElement('p');
+  p.style.cssText = 'font-size:15px;color:#1a1a1a;font-weight:500;margin:0;line-height:1.5;';
+  p.innerHTML = msg;
+  box.appendChild(p);
+
+  div.appendChild(box);
+  document.body.appendChild(div);
+  setTimeout(() => { div.style.animation = 'eggFadeOut 0.3s ease forwards'; setTimeout(() => div.remove(), 300); }, duration);
+}
+
+function spawnRain(container) {
+  const chars = ['🧠','✨','💜','🎵','⭐','🌸'];
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('span');
+    s.textContent = chars[Math.floor(Math.random() * chars.length)];
+    s.style.cssText = `
+      position:absolute;font-size:${Math.random()*20+16}px;
+      left:${Math.random()*100}%;top:-40px;
+      animation:eggRain ${Math.random()*2+1.5}s linear ${Math.random()*2}s forwards;
+      opacity:0.9;
+    `;
+    container.appendChild(s);
+  }
+}
+
+// ── CSS de animaciones ───────────────────────────────────────────
+const eggStyle = document.createElement('style');
+eggStyle.textContent = `
+  @keyframes eggFadeIn  { from{opacity:0} to{opacity:1} }
+  @keyframes eggFadeOut { from{opacity:1} to{opacity:0} }
+  @keyframes eggPop     { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes eggShake   { 0%,100%{transform:rotate(0deg)} 20%{transform:rotate(-8deg)} 40%{transform:rotate(8deg)} 60%{transform:rotate(-5deg)} 80%{transform:rotate(5deg)} }
+  @keyframes eggRain    { from{transform:translateY(0) rotate(0deg);opacity:1} to{transform:translateY(110vh) rotate(720deg);opacity:0} }
+  @keyframes eggSpin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+`;
+document.head.appendChild(eggStyle);
+
+// ── 1. PUNTAJE ALTO ≥32 → Toga aparece ──────────────────────────
+const _origRender = render;
+function renderWithEgg() {
+  _origRender();
+  if (st.screen === 'result' && st.result && st.result.score >= 32) {
+    setTimeout(() => {
+      showOverlay({
+        img: EGG_IMGS.toga,
+        emoji: EGG_IMGS.toga.includes('placeholder') ? '🩸' : null,
+        msg: '¡Felicidades! Himiko Toga te da la bienvenida al club 🩸<br><small style="color:#aaa">Puntaje ≥32 desbloqueado</small>',
+        duration: 4000,
+        shake: true,
+      });
+    }, 800);
+  }
+}
+window.render = renderWithEgg;
+// parchamos las llamadas internas también
+const _submitOld = submit;
+async function submit() {
+  let total = 0; const cats = [0,0,0,0,0];
+  AQ_QUESTIONS.forEach((q, i) => {
+    const pts = scoreAns(q, st.ans[i] || 'td');
+    total += pts; cats[q.cat] += pts;
+  });
+  document.getElementById('app').innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Guardando resultado…</div></div>`;
+  const res = await api('/submit', { method: 'POST', body: { user_id: st.user.id, score: total, cats } });
+  if (res.error) { showGlobalErr(res.error); return; }
+  st.result = { score: total, cats };
+  st.screen = 'result';
+  renderWithEgg();
+}
+
+// ── 2. CLICK SECRETO EN EL LOGO 🧠 (5 veces rápido) ────────────
+let logoClicks = 0, logoTimer = null;
+document.addEventListener('click', (e) => {
+  if (e.target.textContent?.includes('🧠') || e.target.closest?.('[data-logo]')) {
+    logoClicks++;
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(() => { logoClicks = 0; }, 1500);
+    if (logoClicks >= 5) {
+      logoClicks = 0;
+      showOverlay({
+        img: EGG_IMGS.teto,
+        emoji: EGG_IMGS.teto.includes('placeholder') ? '🎵' : null,
+        msg: 'Kasane Teto dice: <em>"Hola, encontraste el secreto~"</em> 🎵',
+        duration: 3500,
+      });
+    }
+  }
+});
+
+// ── 3. KONAMI CODE → lluvia de emojis + Miku ────────────────────
+const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+let konamiIdx = 0;
+document.addEventListener('keydown', (e) => {
+  if (e.key === KONAMI[konamiIdx]) {
+    konamiIdx++;
+    if (konamiIdx === KONAMI.length) {
+      konamiIdx = 0;
+      showOverlay({
+        img: EGG_IMGS.miku,
+        emoji: EGG_IMGS.miku.includes('placeholder') ? '🌸' : null,
+        msg: '↑↑↓↓←→←→BA<br><strong>¡Hatsune Miku ha entrado al servidor!</strong> 🎤',
+        duration: 4500,
+        rain: true,
+      });
+    }
+  } else {
+    konamiIdx = e.key === KONAMI[0] ? 1 : 0;
+  }
+});
+
 </script>
 </body>
 </html>

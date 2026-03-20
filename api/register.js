@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
-import bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
+
+function hashPassword(password) {
+  return createHash('sha256').update(password + 'aq50salt2024').digest('hex');
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,14 +31,14 @@ export default async function handler(req, res) {
 
   if (existing) return res.status(409).json({ error: 'Este correo ya está registrado. Inicia sesión.' });
 
-  const hash = await bcrypt.hash(password, 10);
+  const hash = hashPassword(password);
   const { data, error } = await supabase
     .from('users')
     .insert({ name, email: email.toLowerCase(), password_hash: hash })
     .select('id, name, email')
     .single();
 
-  if (error) return res.status(500).json({ error: 'Error creando cuenta' });
+  if (error) return res.status(500).json({ error: 'Error creando cuenta: ' + error.message });
 
   return res.status(200).json({ user: data });
 }

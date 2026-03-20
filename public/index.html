@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test AQ-50 Universitario</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f0ede6; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 1.5rem 1rem; }
+.app { width: 100%; max-width: 560px; }
+.card { background: #fff; border-radius: 16px; border: 0.5px solid #e0ddd8; padding: 2rem; margin-bottom: 1rem; }
+h1 { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem; }
+h2 { font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.75rem; }
+h3 { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.5rem; }
+.subtitle { font-size: 13px; color: #999; margin-bottom: 1.5rem; line-height: 1.6; }
+label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; margin-top: 14px; }
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%; padding: 10px 12px; border: 0.5px solid #ccc; border-radius: 8px;
+  font-size: 14px; outline: none; transition: border-color 0.2s; color: #1a1a1a; background: #fff;
+}
+input:focus { border-color: #7F77DD; }
+.btn { display: block; width: 100%; padding: 11px; border-radius: 8px; border: none;
+  background: #534AB7; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer;
+  margin-top: 1rem; transition: background 0.2s; }
+.btn:hover { background: #3C3489; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; background: #534AB7; }
+.btn-outline { background: transparent; border: 0.5px solid #534AB7; color: #534AB7; }
+.btn-outline:hover { background: #EEEDFE; }
+.error { font-size: 13px; color: #A32D2D; background: #FCEBEB; padding: 9px 12px; border-radius: 8px; margin-top: 10px; }
+.success { font-size: 13px; color: #3B6D11; background: #EAF3DE; padding: 9px 12px; border-radius: 8px; margin-top: 10px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; }
+.tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; border-radius: 6px; cursor: pointer; border: 0.5px solid #ddd; color: #888; background: #fafafa; transition: all 0.15s; }
+.tab.active { background: #534AB7; color: #fff; border-color: #534AB7; }
+.progress-wrap { margin-bottom: 1.25rem; }
+.progress-top { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 5px; }
+.progress-bar { height: 5px; background: #eee; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #534AB7; border-radius: 3px; transition: width 0.35s; }
+.q-num { font-size: 11px; font-weight: 600; color: #534AB7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.q-text { font-size: 15px; color: #1a1a1a; line-height: 1.6; margin-bottom: 16px; }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.opt { padding: 11px 8px; border-radius: 8px; border: 0.5px solid #ddd; background: #fafafa;
+  font-size: 12px; cursor: pointer; transition: all 0.15s; text-align: center; color: #444; line-height: 1.4; }
+.opt:hover { border-color: #7F77DD; background: #EEEDFE; color: #534AB7; }
+.opt.sel { border-color: #534AB7; background: #534AB7; color: #fff; }
+.nav-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.nav-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.logout-btn { font-size: 12px; color: #ccc; cursor: pointer; transition: color 0.15s; }
+.logout-btn:hover { color: #A32D2D; }
+.btn-row { display: flex; gap: 8px; margin-top: 1rem; }
+.result-big { text-align: center; padding: 1.25rem 0 1rem; }
+.result-num { font-size: 60px; font-weight: 700; color: #534AB7; line-height: 1; }
+.result-denom { font-size: 20px; color: #ccc; font-weight: 400; }
+.result-tag { display: inline-block; margin-top: 0.75rem; padding: 5px 18px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+.tag-low { background: #EAF3DE; color: #3B6D11; }
+.tag-mid { background: #FAEEDA; color: #854F0B; }
+.tag-high { background: #FCEBEB; color: #A32D2D; }
+.badge-low { background: #EAF3DE; color: #3B6D11; }
+.badge-mid { background: #FAEEDA; color: #854F0B; }
+.badge-high { background: #FCEBEB; color: #A32D2D; }
+.info-box { background: #EEEDFE; border-radius: 10px; padding: 13px 15px; font-size: 13px; color: #3C3489; margin-bottom: 1.25rem; line-height: 1.6; }
+.chart-wrap { position: relative; height: 260px; margin-top: 0.75rem; }
+.breakdown { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 1.25rem; }
+.bd-item { text-align: center; background: #fafafa; border-radius: 8px; border: 0.5px solid #eee; padding: 8px 4px; }
+.bd-label { font-size: 9px; color: #aaa; margin-bottom: 3px; line-height: 1.3; }
+.bd-val { font-size: 20px; font-weight: 700; color: #534AB7; }
+.bd-max { font-size: 10px; color: #ccc; }
+.divider { height: 0.5px; background: #eee; margin: 1.25rem 0; }
+.rank-row { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 8px; margin-bottom: 3px; }
+.rank-row.me { background: #EEEDFE; }
+.rank-pos { font-size: 14px; font-weight: 700; min-width: 32px; color: #bbb; }
+.rank-pos.gold { color: #BA7517; }
+.rank-pos.silver { color: #888; }
+.rank-pos.bronze { color: #993C1D; }
+.rank-info { flex: 1; min-width: 0; }
+.rank-name { font-size: 13px; font-weight: 500; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-domain { font-size: 11px; color: #bbb; }
+.rank-right { text-align: right; flex-shrink: 0; }
+.rank-score { font-size: 17px; font-weight: 700; color: #534AB7; }
+.rank-badge { font-size: 10px; padding: 1px 7px; border-radius: 10px; }
+.me-tag { font-size: 10px; color: #534AB7; margin-left: 4px; font-weight: 400; }
+.loading { text-align: center; padding: 2rem; color: #bbb; font-size: 14px; }
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #eee; border-top-color: #534AB7; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="app" id="app"><div class="loading"><span class="spinner"></span>Cargando…</div></div>
+
+<script>
+const AQ_QUESTIONS = [
+  { text: "Prefiero hacer las cosas con otras personas antes que solo/a.", rev: true, cat: 0 },
+  { text: "Prefiero hacer las cosas de la misma manera una y otra vez.", rev: false, cat: 2 },
+  { text: "Si trato de imaginar algo, encuentro muy fácil crear una imagen mental.", rev: true, cat: 3 },
+  { text: "Con frecuencia me absorbo tanto en una cosa que pierdo de vista otras.", rev: false, cat: 4 },
+  { text: "Con frecuencia noto pequeños sonidos que otros no notan.", rev: false, cat: 1 },
+  { text: "Generalmente noto números de matrícula u otro tipo de cadenas de información.", rev: false, cat: 4 },
+  { text: "Otras personas me dicen que lo que dije fue descortés, aunque yo no lo vi así.", rev: false, cat: 0 },
+  { text: "Al leer una historia, puedo imaginar fácilmente cómo se verían los personajes.", rev: true, cat: 3 },
+  { text: "Estoy muy fascinado/a por las fechas.", rev: false, cat: 4 },
+  { text: "En un grupo social, puedo seguir fácilmente varias conversaciones al mismo tiempo.", rev: true, cat: 0 },
+  { text: "Me resulta fácil 'leer entre líneas' cuando alguien me habla.", rev: true, cat: 0 },
+  { text: "Suelo concentrarme en los detalles más que en el panorama general.", rev: false, cat: 1 },
+  { text: "Me resulta difícil saber cuándo es mi turno en una conversación.", rev: false, cat: 0 },
+  { text: "Disfruto haciendo las cosas de manera espontánea.", rev: true, cat: 2 },
+  { text: "Soy de las últimas personas en comprender el chiste.", rev: false, cat: 0 },
+  { text: "Me resulta fácil hacer más de una cosa a la vez.", rev: true, cat: 4 },
+  { text: "Disfruto hacer cosas de la vida cotidiana de la misma manera cada vez.", rev: false, cat: 2 },
+  { text: "Me resulta fácil mantener una conversación cara a cara.", rev: true, cat: 0 },
+  { text: "Noto patrones en las cosas todo el tiempo.", rev: false, cat: 1 },
+  { text: "Prefiero leer no-ficción antes que ficción.", rev: false, cat: 3 },
+  { text: "Me resulta difícil hacer amigos/as nuevos/as.", rev: false, cat: 0 },
+  { text: "Noto patrones en números, como matrículas o precios.", rev: false, cat: 1 },
+  { text: "Con frecuencia me dicen que soy bueno/a haciendo juegos de palabras.", rev: true, cat: 3 },
+  { text: "No suelo notar si alguien está coqueteando conmigo.", rev: false, cat: 0 },
+  { text: "No soy tan bueno/a para recordar números de teléfono.", rev: true, cat: 4 },
+  { text: "Me resulta difícil imaginar cómo sería ser otra persona.", rev: false, cat: 3 },
+  { text: "Me gusta reunirme con personas nuevas.", rev: true, cat: 0 },
+  { text: "Soy muy bueno/a notando si alguien está aburrido.", rev: true, cat: 0 },
+  { text: "Para mí es difícil saber si alguien está bromeando.", rev: false, cat: 0 },
+  { text: "Me resulta fácil hacer más de una cosa a la vez en conversaciones.", rev: true, cat: 4 },
+  { text: "Cuando hablo al teléfono, no estoy seguro/a cuándo es mi turno.", rev: false, cat: 0 },
+  { text: "Disfruto de las actividades sociales.", rev: true, cat: 0 },
+  { text: "Me resulta difícil calcular la emoción de alguien por su voz.", rev: false, cat: 0 },
+  { text: "Si hago algo por una razón, prefiero hacerlo siempre de la misma manera.", rev: false, cat: 2 },
+  { text: "Las personas con frecuencia me dicen que soy terco/a.", rev: false, cat: 2 },
+  { text: "Cuando era niño/a, disfrutaba jugando con otros niños.", rev: true, cat: 0 },
+  { text: "Me gusta recopilar información sobre categorías de cosas (tipos de coches, aves, plantas…).", rev: false, cat: 4 },
+  { text: "Me resulta difícil imaginar ser un personaje de ficción.", rev: false, cat: 3 },
+  { text: "Me gustan las fiestas y las reuniones sociales.", rev: true, cat: 0 },
+  { text: "No soy particularmente bueno/a recordando fechas de cumpleaños.", rev: true, cat: 4 },
+  { text: "Me resulta muy fácil jugar a juegos de roles con niños.", rev: true, cat: 3 },
+  { text: "Me resulta difícil seguir conversaciones de grupo.", rev: false, cat: 0 },
+  { text: "Disfruto conocer gente nueva.", rev: true, cat: 0 },
+  { text: "Soy un/a buen/a diplomático/a.", rev: true, cat: 0 },
+  { text: "No soy muy bueno/a para recordar los cumpleaños de la gente.", rev: true, cat: 4 },
+  { text: "Me resulta muy fácil jugar a juegos con niños que implican pretender cosas.", rev: true, cat: 3 },
+  { text: "Prefiero ir al teatro/cine antes que a un museo.", rev: true, cat: 3 },
+  { text: "Me resulta difícil imaginar cómo me vería desde afuera.", rev: false, cat: 3 },
+  { text: "Me resulta difícil integrarme a conversaciones grupales ya comenzadas.", rev: false, cat: 0 },
+  { text: "Me gusta seguir reglas y rutinas cuando hago las cosas.", rev: false, cat: 2 },
+];
+
+const CATS = ["Social", "Atención", "Rutinas", "Imaginación", "Datos"];
+const CAT_MAX = [0,0,0,0,0];
+AQ_QUESTIONS.forEach(q => CAT_MAX[q.cat]++);
+
+const OPTIONS = [
+  { label: "Totalmente de acuerdo", v: "ta" },
+  { label: "Poco de acuerdo", v: "pa" },
+  { label: "Poco en desacuerdo", v: "pd" },
+  { label: "Totalmente en desacuerdo", v: "td" },
+];
+
+function scoreAns(q, ans) {
+  const agree = ans === 'ta' || ans === 'pa';
+  return (!q.rev && agree) || (q.rev && !agree) ? 1 : 0;
+}
+function getTag(s) {
+  if (s >= 32) return { label: "Muy alto", cls: "tag-high", badge: "badge-high" };
+  if (s >= 20) return { label: "Moderado", cls: "tag-mid", badge: "badge-mid" };
+  return { label: "Bajo", cls: "tag-low", badge: "badge-low" };
+}
+function getDesc(s) {
+  if (s >= 32) return "Tu puntaje supera el punto de corte clínico (≥32). No es un diagnóstico, pero sugiere rasgos significativos del espectro. Un especialista puede orientarte mejor.";
+  if (s >= 26) return "Tu puntaje está por encima del promedio de la población general (~16 pts). Algunos rasgos del espectro autista pueden estar presentes.";
+  if (s >= 20) return "Puntaje en zona media. Tienes algunos rasgos comunes, como la mayoría de las personas.";
+  return "Puntaje bajo, cercano al promedio neurotípico (~16 pts). Pocos rasgos autistas según el AQ-50.";
+}
+
+let st = { screen: 'login', tab: 'login', user: null, result: null, ans: {}, q: 0 };
+let chartInst = null;
+
+function api(path, opts = {}) {
+  return fetch('/api' + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  }).then(r => r.json());
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (st.screen === 'login')   app.innerHTML = renderAuth();
+  else if (st.screen === 'test')    app.innerHTML = renderTest();
+  else if (st.screen === 'result')  { app.innerHTML = renderResult(); setTimeout(drawChart, 60); }
+  else if (st.screen === 'ranking') app.innerHTML = renderRanking();
+}
+
+/* ─── AUTH ─── */
+function renderAuth() {
+  return `<div class="card">
+    <h1>🧠 Test AQ-50</h1>
+    <p class="subtitle">El Cociente de Espectro Autista (Baron-Cohen et al., 2001). 50 preguntas sobre habilidades sociales, atención, comunicación e imaginación.<br><strong style="color:#534AB7">Solo puedes hacerlo una vez por cuenta.</strong></p>
+    <div class="tabs">
+      <div class="tab ${st.tab==='login'?'active':''}" onclick="sw('login')">Iniciar sesión</div>
+      <div class="tab ${st.tab==='register'?'active':''}" onclick="sw('register')">Registrarse</div>
+    </div>
+    ${st.tab==='login' ? `
+      <label>Correo universitario</label>
+      <input type="email" id="em" placeholder="nombre@universidad.edu" />
+      <label>Contraseña</label>
+      <input type="password" id="pw" placeholder="••••••••" />
+      <div id="err"></div>
+      <button class="btn" id="loginBtn" onclick="doLogin()">Entrar</button>
+    ` : `
+      <label>Nombre</label>
+      <input type="text" id="nm" placeholder="Tu nombre completo" />
+      <label>Correo universitario</label>
+      <input type="email" id="em" placeholder="nombre@universidad.edu" />
+      <label>Contraseña</label>
+      <input type="password" id="pw" placeholder="Mínimo 6 caracteres" />
+      <div id="err"></div>
+      <button class="btn" id="regBtn" onclick="doRegister()">Crear cuenta y comenzar</button>
+    `}
+    <p style="font-size:11px;color:#ccc;margin-top:1rem;text-align:center;">Solo correos con dominio institucional</p>
+  </div>`;
+}
+
+async function doLogin() {
+  const em = val('em'), pw = val('pw');
+  setBtnLoad('loginBtn', true);
+  const res = await api('/login', { method: 'POST', body: { email: em, password: pw } });
+  setBtnLoad('loginBtn', false);
+  if (res.error) return showErr(res.error);
+  st.user = res.user;
+  st.result = res.result;
+  st.screen = res.result ? 'result' : 'test';
+  st.ans = {}; st.q = 0;
+  render();
+}
+
+async function doRegister() {
+  const nm = val('nm'), em = val('em'), pw = val('pw');
+  setBtnLoad('regBtn', true);
+  const res = await api('/register', { method: 'POST', body: { name: nm, email: em, password: pw } });
+  setBtnLoad('regBtn', false);
+  if (res.error) return showErr(res.error);
+  st.user = res.user;
+  st.result = null;
+  st.ans = {}; st.q = 0; st.screen = 'test';
+  render();
+}
+
+/* ─── TEST ─── */
+function renderTest() {
+  const q = AQ_QUESTIONS[st.q];
+  const pct = Math.round((st.q / AQ_QUESTIONS.length) * 100);
+  const sel = st.ans[st.q];
+  return `<div class="card">
+    <div class="nav-bar">
+      <div class="nav-title">🧠 Test AQ-50</div>
+      <div class="logout-btn" onclick="logout()">✕ Salir</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-top"><span>Pregunta ${st.q + 1} de ${AQ_QUESTIONS.length}</span><span>${pct}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="q-num">Área: ${CATS[q.cat]}</div>
+    <div class="q-text">${q.text}</div>
+    <div class="options">
+      ${OPTIONS.map(o => `<div class="opt ${sel===o.v?'sel':''}" onclick="pick('${o.v}')">${o.label}</div>`).join('')}
+    </div>
+    <div class="btn-row" style="margin-top:1.25rem;">
+      ${st.q > 0 ? `<button class="btn btn-outline" onclick="prev()" style="flex:1">← Atrás</button>` : ''}
+      <button class="btn" id="nextBtn" onclick="next()" style="flex:2" ${!sel?'disabled':''}>
+        ${st.q === AQ_QUESTIONS.length - 1 ? 'Finalizar y ver resultado ✓' : 'Siguiente →'}
+      </button>
+    </div>
+  </div>`;
+}
+
+/* ─── RESULT ─── */
+function renderResult() {
+  const r = st.result;
+  if (!r) return '<div class="card"><p class="loading">Cargando resultado…</p></div>';
+  const tag = getTag(r.score);
+  return `<div class="card">
+    <div class="nav-bar">
+      <div class="nav-title">Tu resultado · ${st.user.name}</div>
+      <div class="logout-btn" onclick="logout()">✕ Salir</div>
+    </div>
+    <div class="result-big">
+      <div class="result-num">${r.score}<span class="result-denom">/50</span></div>
+      <div><span class="result-tag ${tag.cls}">${tag.label}</span></div>
+    </div>
+    <div class="info-box">
+      <strong>¿Qué significa?</strong><br>${getDesc(r.score)}
+      <br><span style="font-size:11px;opacity:0.7;display:block;margin-top:6px;">Media poblacional: ~16.4 pts &nbsp;·&nbsp; Punto de corte clínico: ≥32</span>
+    </div>
+    <h3>Puntaje por área</h3>
+    <div class="breakdown">
+      ${CATS.map((c,i) => `<div class="bd-item">
+        <div class="bd-label">${c}</div>
+        <div class="bd-val">${r.cats[i]}</div>
+        <div class="bd-max">/${CAT_MAX[i]}</div>
+      </div>`).join('')}
+    </div>
+    <h3>Gráfica radar</h3>
+    <div class="chart-wrap"><canvas id="myChart"></canvas></div>
+    <div class="divider"></div>
+    <button class="btn" onclick="loadRanking()">Ver ranking completo 🏅</button>
+    <p style="font-size:11px;color:#ccc;text-align:center;margin-top:1rem;">Este test es orientativo. No constituye diagnóstico clínico.</p>
+  </div>`;
+}
+
+function drawChart() {
+  const r = st.result;
+  const ctx = document.getElementById('myChart');
+  if (!ctx || !r) return;
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: CATS,
+      datasets: [{
+        label: st.user.name,
+        data: r.cats,
+        backgroundColor: 'rgba(83,74,183,0.15)',
+        borderColor: 'rgba(83,74,183,0.85)',
+        borderWidth: 2,
+        pointBackgroundColor: '#534AB7',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: Math.max(...CAT_MAX),
+          ticks: { stepSize: 2, font: { size: 10 }, color: '#bbb', backdropColor: 'transparent' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+          angleLines: { color: 'rgba(0,0,0,0.06)' },
+          pointLabels: { font: { size: 12 }, color: '#555' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw} / ${CAT_MAX[c.dataIndex]}` } }
+      }
+    }
+  });
+}
+
+/* ─── RANKING ─── */
+async function loadRanking() {
+  document.getElementById('app').innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Cargando ranking…</div></div>`;
+  const res = await api('/ranking');
+  if (res.error) { showGlobalErr(res.error); return; }
+  st.ranking = res.ranking;
+  st.screen = 'ranking';
+  render();
+}
+
+function renderRanking() {
+  const all = st.ranking || [];
+  const myIdx = all.findIndex(s => s.name === st.user.name);
+  return `<div class="card">
+    <div class="nav-bar">
+      <h2 style="margin:0;">🏅 Ranking global</h2>
+      <div class="logout-btn" onclick="logout()">✕ Salir</div>
+    </div>
+    <p style="font-size:13px;color:#bbb;margin-bottom:1rem;">${all.length} ${all.length===1?'persona ha':'personas han'} completado el test</p>
+    ${all.length === 0 ? '<p style="color:#ddd;text-align:center;padding:2rem 0;">Nadie ha hecho el test aún</p>' :
+      all.map((s, i) => {
+        const tag = getTag(s.score);
+        const isMe = i === myIdx;
+        const posCls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+        const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+        return `<div class="rank-row ${isMe?'me':''}">
+          <div class="rank-pos ${posCls}">${medal}</div>
+          <div class="rank-info">
+            <div class="rank-name">${s.name}${isMe?'<span class="me-tag">← tú</span>':''}</div>
+            <div class="rank-domain">@${s.domain}</div>
+          </div>
+          <div class="rank-right">
+            <div class="rank-score">${s.score}</div>
+            <span class="rank-badge ${tag.badge}">${tag.label}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    <button class="btn btn-outline" onclick="backToResult()" style="margin-top:1rem;">← Mi resultado</button>
+  </div>`;
+}
+
+/* ─── HELPERS ─── */
+function sw(t) { st.tab = t; render(); }
+function pick(v) { st.ans[st.q] = v; render(); }
+function prev() { if (st.q > 0) { st.q--; render(); } }
+function next() {
+  if (!st.ans[st.q]) return;
+  if (st.q < AQ_QUESTIONS.length - 1) { st.q++; render(); }
+  else submit();
+}
+
+async function submit() {
+  let total = 0; const cats = [0,0,0,0,0];
+  AQ_QUESTIONS.forEach((q, i) => {
+    const pts = scoreAns(q, st.ans[i] || 'td');
+    total += pts; cats[q.cat] += pts;
+  });
+  document.getElementById('app').innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Guardando resultado…</div></div>`;
+  const res = await api('/submit', { method: 'POST', body: { user_id: st.user.id, score: total, cats } });
+  if (res.error) { showGlobalErr(res.error); return; }
+  st.result = { score: total, cats };
+  st.screen = 'result';
+  render();
+}
+
+function backToResult() { st.screen = 'result'; render(); setTimeout(drawChart, 60); }
+function logout() { st = { screen:'login', tab:'login', user:null, result:null, ans:{}, q:0 }; render(); }
+function val(id) { return (document.getElementById(id)||{}).value?.trim() || ''; }
+function showErr(msg) { const el = document.getElementById('err'); if (el) el.innerHTML = `<div class="error">${msg}</div>`; }
+function showGlobalErr(msg) { document.getElementById('app').innerHTML = `<div class="card"><div class="error">${msg}</div><button class="btn btn-outline" onclick="render()" style="margin-top:1rem;">← Volver</button></div>`; }
+function setBtnLoad(id, loading) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.disabled = loading;
+  el.innerHTML = loading ? '<span class="spinner"></span>Cargando…' : el.innerHTML;
+}
+
+render();
+</script>
+</body>
+</html>

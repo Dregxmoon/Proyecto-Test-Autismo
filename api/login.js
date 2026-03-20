@@ -6,30 +6,77 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-function hashPassword(password) {
-  return createHash('sha256').update(password + 'aq50salt2024').digest('hex');
+async function hashPassword(password, salt) {
+  const hash = createHash('sha256').update(password + salt + 'aq50_2024_uni').digest('hex');
+  let h = hash;
+  for (let i = 0; i < 10000; i++) {
+    h = createHash('sha256').update(h + salt).digest('hex');
+  }
+  return h;
+}
+
+// Rate limiting por IP - máx 5 intentos fallidos por minuto
+const failedAttempts = new Map();
+function checkLoginRateLimit(ip) {
+  const now = Date.now();
+  const key = ip || 'unknown';
+  const data = failedAttempts.get(key) || { count: 0, first: now };
+  if (now - data.first > 60000) { failedAttempts.set(key, { count: 1, first: now }); return true; }
+  if (data.count >= 5) return false;
+  return true;
+}
+function recordFailedAttempt(ip) {
+  const key = ip || 'unknown';
+  const now = Date.now();
+  const data = failedAttempts.get(key) || { count: 0, first: now };
+  failedAttempts.set(key, { count: data.count + 1, first: data.first });
 }
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const { email, password } = req.body;
+  const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress;
+  if (!checkLoginRateLimit(ip)) {
+    return res.status(429).json({ error: 'Demasiados intentos fallidos. Espera un minuto.' });
+  }
+
+  const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Faltan campos' });
+  if (typeof email !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Datos inválidos' });
 
   const { data: user } = await supabase
     .from('users')
-    .select('id, name, email, password_hash')
-    .eq('email', email.toLowerCase())
+    .select('id, name, email, password_hash, salt')
+    .eq('email', email.toLowerCase().trim())
     .single();
 
-  if (!user) return res.status(401).json({ error: 'No existe esa cuenta. Regístrate primero.' });
+  if (!user) {
+    recordFailedAttempt(ip);
+    // Mismo mensaje para no revelar si el correo existe
+    return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+  }
 
-  const hash = hashPassword(password);
-  if (hash !== user.password_hash) return res.status(401).json({ error: 'Contraseña incorrecta' });
+  // Soporte para cuentas antiguas (sin salt) y nuevas (con salt)
+  let valid = false;
+  if (user.salt) {
+    const hash = await hashPassword(password, user.salt);
+    valid = hash === user.password_hash;
+  } else {
+    // fallback para cuentas creadas antes del fix
+    const oldHash = createHash('sha256').update(password + 'aq50salt2024').digest('hex');
+    valid = oldHash === user.password_hash;
+  }
+
+  if (!valid) {
+    recordFailedAttempt(ip);
+    return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+  }
 
   const { data: result } = await supabase
     .from('results')

@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
-import bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
+
+function hashPassword(password) {
+  return createHash('sha256').update(password + 'aq50salt2024').digest('hex');
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,8 +28,8 @@ export default async function handler(req, res) {
 
   if (!user) return res.status(401).json({ error: 'No existe esa cuenta. Regístrate primero.' });
 
-  const ok = await bcrypt.compare(password, user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'Contraseña incorrecta' });
+  const hash = hashPassword(password);
+  if (hash !== user.password_hash) return res.status(401).json({ error: 'Contraseña incorrecta' });
 
   const { data: result } = await supabase
     .from('results')

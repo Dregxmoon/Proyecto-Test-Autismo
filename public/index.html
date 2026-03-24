@@ -742,14 +742,15 @@ document.addEventListener('click', (e) => {
     if (logoClicks >= 5) {
       logoClicks = 0;
       showOverlay({
-        img: EGG_IMGS.teto,
-        emoji: EGG_IMGS.teto.includes('placeholder') ? '🎵' : null,
+        img: "https://i.pinimg.com/736x/32/63/b9/3263b9f0b19bbe0325bd901f19a2df15.jpg",
+        emoji: '🎵',
         msg: 'Kasane Teto dice: <em>"Hola, encontraste el secreto~"</em> 🎵',
         duration: 3500,
       });
     }
   }
 });
+
 
 // ── 3. KONAMI CODE → lluvia de emojis + Miku ────────────────────
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];

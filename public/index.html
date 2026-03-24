@@ -705,8 +705,8 @@ function renderWithEgg() {
   if (st.screen === 'result' && st.result && st.result.score >= 32) {
     setTimeout(() => {
       showOverlay({
-        img: EGG_IMGS.toga,
-        emoji: EGG_IMGS.toga.includes('placeholder') ? '🩸' : null,
+        img: "https://i.pinimg.com/736x/0c/87/f9/0c87f93d4fc748d8c038506b8f8a9e2f.jpg",
+        emoji: '🩸',
         msg: '¡Felicidades! Himiko Toga te da la bienvenida al club 🩸<br><small style="color:#aaa">Puntaje ≥32 desbloqueado</small>',
         duration: 4000,
         shake: true,
@@ -714,6 +714,7 @@ function renderWithEgg() {
     }, 800);
   }
 }
+
 window.render = renderWithEgg;
 // parchamos las llamadas internas también
 const _submitOld = submit;

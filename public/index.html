@@ -166,23 +166,35 @@ function scoreAns(q, ans) {
   const agree = ans === 'ta' || ans === 'pa';
   return (!q.rev && agree) || (q.rev && !agree) ? 1 : 0;
 }
+
+// Normaliza cats a 20pts c/u → total sobre 100
+function normalizeCats(cats) {
+  return cats.map((v, i) => Math.round((v / CAT_MAX[i]) * 20));
+}
+function normalizedTotal(cats) {
+  return normalizeCats(cats).reduce((a,b) => a+b, 0);
+}
+
 function getTag(s) {
-  if (s >= 32) return { label: "Muy alto", cls: "tag-high", badge: "badge-high" };
-  if (s >= 20) return { label: "Moderado", cls: "tag-mid", badge: "badge-mid" };
+  // s ahora es sobre 100
+  if (s >= 65) return { label: "Muy alto", cls: "tag-high", badge: "badge-high" };
+  if (s >= 40) return { label: "Moderado", cls: "tag-mid", badge: "badge-mid" };
   return { label: "Bajo", cls: "tag-low", badge: "badge-low" };
 }
 function getDesc(s) {
-  if (s >= 32) return "Tu puntaje supera el punto de corte clínico (≥32). No es un diagnóstico, pero sugiere rasgos significativos del espectro. Un especialista puede orientarte mejor.";
-  if (s >= 26) return "Tu puntaje está por encima del promedio de la población general (~16 pts). Algunos rasgos del espectro autista pueden estar presentes.";
-  if (s >= 20) return "Puntaje en zona media. Tienes algunos rasgos comunes, como la mayoría de las personas.";
-  return "Puntaje bajo, cercano al promedio neurotípico (~16 pts). Pocos rasgos autistas según el AQ-50.";
+  // s es sobre 100 (normalizado, 20pts por área)
+  if (s >= 65) return "Tu puntaje normalizado es muy alto. Presentas rasgos significativos del espectro autista en múltiples áreas. Esto no es un diagnóstico, pero sería interesante hablar con un especialista.";
+  if (s >= 52) return "Tu puntaje está por encima del promedio de la población general. Algunos rasgos del espectro autista pueden estar presentes en varias áreas.";
+  if (s >= 40) return "Puntaje en zona media. Tienes algunos rasgos comunes distribuidos en varias áreas, como la mayoría de las personas.";
+  return "Puntaje bajo. Presentas pocos rasgos autistas de manera uniforme entre las distintas áreas.";
 }
 
 function getAutismPct(score) {
+  // score es sobre 100 (normalizado)
   if (score <= 0) return 2;
-  if (score >= 50) return 99;
-  if (score < 32) return Math.round(2 + (score / 32) * 78);
-  return Math.round(80 + ((score - 32) / 18) * 19);
+  if (score >= 100) return 99;
+  if (score < 65) return Math.round(2 + (score / 65) * 78);
+  return Math.round(80 + ((score - 65) / 35) * 19);
 }
 
 const CAT_INFO = [
@@ -344,21 +356,23 @@ function renderTest() {
 function renderResult() {
   const r = st.result;
   if (!r) return '<div class="card"><p class="loading">Cargando resultado…</p></div>';
-  const tag = getTag(r.score);
-  const pct = getAutismPct(r.score);
+  const normCats = normalizeCats(r.cats);
+  const normScore = normCats.reduce((a,b)=>a+b,0);
+  const tag = getTag(normScore);
+  const pct = getAutismPct(normScore);
   const pctColor = pct >= 80 ? '#A32D2D' : pct >= 50 ? '#854F0B' : '#3B6D11';
-  const pctBg = pct >= 80 ? '#FCEBEB' : pct >= 50 ? '#FAEEDA' : '#EAF3DE';
   return `<div class="card">
     <div class="nav-bar">
       <div class="nav-title">Tu resultado · ${st.user.name}</div>
       <div class="logout-btn" onclick="logout()">✕ Salir</div>
     </div>
     <div class="result-big">
-      <div class="result-num">${r.score}<span class="result-denom">/50</span></div>
-      <div><span class="result-tag ${tag.cls}">${tag.label}</span></div>
+      <div class="result-num">${normScore}<span class="result-denom">/100</span></div>
+      <div style="font-size:12px;color:#bbb;margin-top:4px;">Puntaje bruto: ${r.score}/50</div>
+      <div style="margin-top:6px;"><span class="result-tag ${tag.cls}">${tag.label}</span></div>
     </div>
     <div style="text-align:center;margin-bottom:1.25rem;">
-      <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Índice orientativo de rasgos autistas</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Índice normalizado de rasgos (cada área vale 20 pts)</div>
       <div style="background:#f0ede6;border-radius:20px;height:14px;overflow:hidden;margin:0 auto;max-width:320px;">
         <div style="height:100%;width:${pct}%;background:${pctColor};border-radius:20px;transition:width 1s ease;"></div>
       </div>
@@ -366,19 +380,20 @@ function renderResult() {
       <div style="font-size:11px;color:#bbb;">Solo orientativo · No es diagnóstico clínico 😄</div>
     </div>
     <div class="info-box">
-      <strong>¿Qué significa?</strong><br>${getDesc(r.score)}
-      <br><span style="font-size:11px;opacity:0.7;display:block;margin-top:6px;">Media poblacional: ~16.4 pts &nbsp;·&nbsp; Punto de corte clínico: ≥32</span>
+      <strong>¿Qué significa?</strong><br>${getDesc(normScore)}
+      <br><span style="font-size:11px;opacity:0.7;display:block;margin-top:6px;">Puntaje normalizado: cada área vale exactamente 20 pts sin importar cuántas preguntas tenga</span>
     </div>
-    <h3>Análisis por área</h3>
+    <h3>Análisis por área <span style="font-size:11px;font-weight:400;color:#bbb;">(normalizado a 20 pts c/u)</span></h3>
     <div style="margin-bottom:1.25rem;">
       ${CAT_INFO.map((cat,i) => {
         const v = r.cats[i]; const max = CAT_MAX[i];
-        const barPct = Math.round((v/max)*100);
+        const normV = normCats[i];
+        const barPct = Math.round((normV/20)*100);
         const barColor = barPct >= 75 ? '#E24B4A' : barPct >= 50 ? '#BA7517' : barPct >= 25 ? '#534AB7' : '#1D9E75';
         return `<div style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:13px;font-weight:500;color:#1a1a1a;">${cat.icon} ${cat.name}</span>
-            <span style="font-size:12px;color:#888;">${v}/${max} · ${barPct}%</span>
+            <span style="font-size:12px;color:#888;">${normV}/20 pts · (bruto: ${v}/${max})</span>
           </div>
           <div style="background:#f0ede6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">
             <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:6px;"></div>
@@ -406,7 +421,7 @@ function drawChart() {
       labels: CATS,
       datasets: [{
         label: st.user.name,
-        data: r.cats,
+        data: normCats,
         backgroundColor: 'rgba(83,74,183,0.15)',
         borderColor: 'rgba(83,74,183,0.85)',
         borderWidth: 2,
@@ -421,7 +436,8 @@ function drawChart() {
       scales: {
         r: {
           min: 0, max: Math.max(...CAT_MAX),
-          ticks: { stepSize: 2, font: { size: 10 }, color: '#bbb', backdropColor: 'transparent' },
+          min: 0, max: 20,
+          ticks: { stepSize: 4, font: { size: 10 }, color: '#bbb', backdropColor: 'transparent' },
           grid: { color: 'rgba(0,0,0,0.06)' },
           angleLines: { color: 'rgba(0,0,0,0.06)' },
           pointLabels: { font: { size: 12 }, color: '#555' }
@@ -504,25 +520,30 @@ function showProfile(idx) {
         </div>
       </div>
       <div style="margin:0.75rem 0;">
-        ${CAT_INFO.map((cat,i) => {
-          const v = s.cats[i]; const max = CAT_MAX[i];
-          const barPct = Math.round((v/max)*100);
-          const barColor = barPct >= 75 ? '#E24B4A' : barPct >= 50 ? '#BA7517' : barPct >= 25 ? '#534AB7' : '#1D9E75';
-          return '<div style="margin-bottom:10px;">' +
-            '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">' +
-              '<span style="font-size:12px;font-weight:500;color:#1a1a1a;">' + cat.icon + ' ' + cat.name + '</span>' +
-              '<span style="font-size:11px;color:#aaa;">' + v + '/' + max + '</span>' +
-            '</div>' +
-            '<div style="background:#f0ede6;border-radius:6px;height:7px;overflow:hidden;margin-bottom:4px;">' +
-              '<div style="height:100%;width:' + barPct + '%;background:' + barColor + ';border-radius:6px;"></div>' +
-            '</div>' +
-            '<div style="font-size:11px;color:#888;line-height:1.4;">' + cat.desc(v, max) + '</div>' +
+        ${(() => {
+          const sNormCats = normalizeCats(s.cats);
+          const sNormTotal = sNormCats.reduce((a,b)=>a+b,0);
+          return CAT_INFO.map((cat,i) => {
+            const v = s.cats[i]; const max = CAT_MAX[i];
+            const normV = sNormCats[i];
+            const barPct = Math.round((normV/20)*100);
+            const barColor = barPct >= 75 ? '#E24B4A' : barPct >= 50 ? '#BA7517' : barPct >= 25 ? '#534AB7' : '#1D9E75';
+            return '<div style="margin-bottom:10px;">' +
+              '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">' +
+                '<span style="font-size:12px;font-weight:500;color:#1a1a1a;">' + cat.icon + ' ' + cat.name + '</span>' +
+                '<span style="font-size:11px;color:#aaa;">' + normV + '/20</span>' +
+              '</div>' +
+              '<div style="background:#f0ede6;border-radius:6px;height:7px;overflow:hidden;margin-bottom:4px;">' +
+                '<div style="height:100%;width:' + barPct + '%;background:' + barColor + ';border-radius:6px;"></div>' +
+              '</div>' +
+              '<div style="font-size:11px;color:#888;line-height:1.4;">' + cat.desc(v, max) + '</div>' +
+            '</div>';
+          }).join('') +
+          '<div style="text-align:center;margin-top:8px;padding:8px;background:#f5f3ff;border-radius:8px;">' +
+            '<span style="font-size:12px;color:#534AB7;font-weight:500;">Índice de rasgos: ' + getAutismPct(sNormTotal) + '%</span>' +
+            '<span style="font-size:11px;color:#bbb;"> · Solo orientativo 😄</span>' +
           '</div>';
-        }).join('')}
-        <div style="text-align:center;margin-top:8px;padding:8px;background:#f5f3ff;border-radius:8px;">
-          <span style="font-size:12px;color:#534AB7;font-weight:500;">Índice de rasgos: ${getAutismPct(s.score)}%</span>
-          <span style="font-size:11px;color:#bbb;"> · Solo orientativo 😄</span>
-        </div>
+        })()}
       </div>
       <div class="modal-chart-wrap"><canvas id="profileChart"></canvas></div>
     </div>`;
@@ -540,7 +561,7 @@ function showProfile(idx) {
         labels: CATS,
         datasets: [{
           label: s.name,
-          data: s.cats,
+          data: normalizeCats(s.cats),
           backgroundColor: 'rgba(83,74,183,0.15)',
           borderColor: 'rgba(83,74,183,0.85)',
           borderWidth: 2,
@@ -556,6 +577,7 @@ function showProfile(idx) {
         scales: {
           r: {
             min: 0, max: Math.max(...CAT_MAX),
+            min: 0, max: 20,
             ticks: { stepSize: 4, font: { size: 9 }, color: '#bbb', backdropColor: 'transparent', maxTicksLimit: 4 },
             grid: { color: 'rgba(0,0,0,0.06)' },
             angleLines: { color: 'rgba(0,0,0,0.08)' },
@@ -615,48 +637,43 @@ function setBtnLoad(id, loading) {
 
 render();
 
+/* easter eggs */
+// ── Imágenes ──────────────────────────────────────────────────────
+const EGG_IMGS = {
+  toga:  'https://i.pinimg.com/736x/ff/15/c4/ff15c4ad9900f0f5313f69077737db18.jpg',
+  miku:  'https://i.pinimg.com/736x/2b/4a/68/2b4a687a6dc22912342c9e9dae2f1d1c.jpg',
+  teto:  'https://i.pinimg.com/736x/32/63/b9/3263b9f0b19bbe0325bd901f19a2df15.jpg',
+  mid:   'https://i.pinimg.com/736x/7e/a9/de/7ea9debe7ce24f24f62c295a1048f121.jpg',
+  low:   'https://i.pinimg.com/736x/be/87/90/be879008fb3e8655779e7c16b24bc2df.jpg',
+};
+
 // ── Overlay helper ───────────────────────────────────────────────
 function showOverlay({ img, emoji, msg, duration = 3000, shake = false, rain = false }) {
   const old = document.getElementById('egg-overlay');
   if (old) old.remove();
-
   const div = document.createElement('div');
   div.id = 'egg-overlay';
-  div.style.cssText = `
-    position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;pointer-events:none;
-    background:rgba(0,0,0,0.55);animation:eggFadeIn 0.3s ease;
-  `;
-
+  div.style.cssText = `position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,0.55);animation:eggFadeIn 0.3s ease;`;
   if (rain) spawnRain(div);
-
   const box = document.createElement('div');
-  box.style.cssText = `
-    background:#fff;border-radius:20px;padding:1.5rem 2rem;text-align:center;
-    max-width:320px;animation:eggPop 0.4s cubic-bezier(.175,.885,.32,1.275);
-    ${shake ? 'animation:eggPop 0.4s cubic-bezier(.175,.885,.32,1.275),eggShake 0.5s 0.4s ease;' : ''}
-  `;
-
+  box.style.cssText = `background:#fff;border-radius:20px;padding:1.5rem 2rem;text-align:center;max-width:320px;animation:eggPop 0.4s cubic-bezier(.175,.885,.32,1.275);${shake?'animation:eggPop 0.4s cubic-bezier(.175,.885,.32,1.275),eggShake 0.5s 0.4s ease;':''}`;
   if (img) {
     const i = document.createElement('img');
     i.src = img;
-    i.style.cssText = 'width:180px;height:180px;object-fit:contain;margin-bottom:0.75rem;display:block;margin:0 auto 0.75rem;';
+    i.style.cssText = 'width:180px;height:180px;object-fit:contain;display:block;margin:0 auto 0.75rem;';
     i.onerror = () => { i.style.display='none'; };
     box.appendChild(i);
   }
-
   if (emoji) {
     const e = document.createElement('div');
     e.style.cssText = 'font-size:64px;margin-bottom:0.5rem;';
     e.textContent = emoji;
     box.appendChild(e);
   }
-
   const p = document.createElement('p');
   p.style.cssText = 'font-size:15px;color:#1a1a1a;font-weight:500;margin:0;line-height:1.5;';
   p.innerHTML = msg;
   box.appendChild(p);
-
   div.appendChild(box);
   document.body.appendChild(div);
   setTimeout(() => { div.style.animation = 'eggFadeOut 0.3s ease forwards'; setTimeout(() => div.remove(), 300); }, duration);
@@ -667,17 +684,12 @@ function spawnRain(container) {
   for (let i = 0; i < 30; i++) {
     const s = document.createElement('span');
     s.textContent = chars[Math.floor(Math.random() * chars.length)];
-    s.style.cssText = `
-      position:absolute;font-size:${Math.random()*20+16}px;
-      left:${Math.random()*100}%;top:-40px;
-      animation:eggRain ${Math.random()*2+1.5}s linear ${Math.random()*2}s forwards;
-      opacity:0.9;
-    `;
+    s.style.cssText = `position:absolute;font-size:${Math.random()*20+16}px;left:${Math.random()*100}%;top:-40px;animation:eggRain ${Math.random()*2+1.5}s linear ${Math.random()*2}s forwards;opacity:0.9;`;
     container.appendChild(s);
   }
 }
 
-// ── CSS de animaciones ───────────────────────────────────────────
+// ── CSS animaciones ──────────────────────────────────────────────
 const eggStyle = document.createElement('style');
 eggStyle.textContent = `
   @keyframes eggFadeIn  { from{opacity:0} to{opacity:1} }
@@ -685,125 +697,71 @@ eggStyle.textContent = `
   @keyframes eggPop     { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
   @keyframes eggShake   { 0%,100%{transform:rotate(0deg)} 20%{transform:rotate(-8deg)} 40%{transform:rotate(8deg)} 60%{transform:rotate(-5deg)} 80%{transform:rotate(5deg)} }
   @keyframes eggRain    { from{transform:translateY(0) rotate(0deg);opacity:1} to{transform:translateY(110vh) rotate(720deg);opacity:0} }
-  @keyframes eggSpin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 `;
 document.head.appendChild(eggStyle);
 
-// ── IMÁGENES DE EASTER EGGS ──────────────────────────────────────
-const EGG_IMGS = {
-  toga: "https://i.pinimg.com/736x/ff/15/c4/ff15c4ad9900f0f5313f69077737db18.jpg",
-  mid:  "https://i.pinimg.com/736x/7e/a9/de/7ea9debe7ce24f24f62c295a1048f121.jpg",
-  low:  "https://i.pinimg.com/736x/be/87/90/be879008fb3e8655779e7c16b24bc2df.jpg",
-  teto: "https://i.pinimg.com/736x/32/63/b9/3263b9f0b19bbe0325bd901f19a2df15.jpg",
-  miku: "https://i.pinimg.com/736x/2b/4a/68/2b4a687a6dc22912342c9e9dae2f1d1c.jpg"
-};
-
+// ── 1. RESULTADO → imagen según puntaje (UN SOLO bloque) ─────────
 const _origRender = render;
 function renderWithEgg() {
   _origRender();
-
   if (st.screen === 'result' && st.result) {
-    const score = st.result.score;
-
+    const score = normalizedTotal(st.result.cats);
     setTimeout(() => {
-      if (score >= 32) {
-        showOverlay({
-          img: EGG_IMGS.toga,
-          msg: '¡Felicidades!<br><small style="color:#aaa">Puntaje ≥32 desbloqueado</small>',
-          duration: 4000,
-          shake: true
-        });
-      } else if (score >= 20) {
-        showOverlay({
-          img: EGG_IMGS.mid,
-          emoji: '🌸',
-          msg: '¡Ahí vas!<br><small style="color:#aaa">Puntaje moderado</small>',
-          duration: 4000,
-          shake: true
-        });
+      if (score >= 65) {
+        showOverlay({ img: EGG_IMGS.toga, msg: '¡Felicidades!<br><small style="color:#aaa">Puntaje ≥32 desbloqueado</small>', duration: 4000, shake: true });
+      } else if (score >= 40) {
+        showOverlay({ img: EGG_IMGS.mid, emoji: '🌸', msg: '¡Ahí vas!<br><small style="color:#aaa">Puntaje moderado</small>', duration: 4000 });
       } else {
-        showOverlay({
-          img: EGG_IMGS.low,
-          emoji: '💡',
-          msg: '¡Eres Normal!<br><small style="color:#aaa">Felicidades</small>',
-          duration: 4000,
-          shake: true
-        });
+        showOverlay({ img: EGG_IMGS.low, emoji: '💡', msg: '¡Eres Normal!<br><small style="color:#aaa">Felicidades</small>', duration: 4000 });
       }
     }, 800);
   }
 }
-
 window.render = renderWithEgg;
 
 async function submit() {
-  let total = 0;
-  const cats = [0, 0, 0, 0, 0];
-
+  let total = 0; const cats = [0,0,0,0,0];
   AQ_QUESTIONS.forEach((q, i) => {
     const pts = scoreAns(q, st.ans[i] || 'td');
-    total += pts;
-    cats[q.cat] += pts;
+    total += pts; cats[q.cat] += pts;
   });
-
-  document.getElementById('app').innerHTML =
-    `<div class="card"><div class="loading"><span class="spinner"></span>Guardando resultado…</div></div>`;
-
-  const res = await api('/submit', {
-    method: 'POST',
-    body: { user_id: st.user.id, score: total, cats }
-  });
-
-  if (res.error) {
-    showGlobalErr(res.error);
-    return;
-  }
-
+  document.getElementById('app').innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Guardando resultado…</div></div>`;
+  const res = await api('/submit', { method: 'POST', body: { user_id: st.user.id, score: total, cats } });
+  if (res.error) { showGlobalErr(res.error); return; }
   st.result = { score: total, cats };
   st.screen = 'result';
   renderWithEgg();
 }
 
-let logoClicks = 0;
-let logoTimer = null;
-
+// ── 2. CLICK SECRETO EN EL LOGO 🧠 (5 veces rápido) ────────────
+let logoClicks = 0, logoTimer = null;
 document.addEventListener('click', (e) => {
   if (e.target.textContent?.includes('🧠') || e.target.closest?.('[data-logo]')) {
     logoClicks++;
     clearTimeout(logoTimer);
     logoTimer = setTimeout(() => { logoClicks = 0; }, 1500);
-
     if (logoClicks >= 5) {
       logoClicks = 0;
-      showOverlay({
-        img: EGG_IMGS.teto,
-        msg: 'Kasane Teto dice: <em>"Que andas presionando cosas que no son, ponte a hacer el test."</em>',
-        duration: 3500
-      });
+      showOverlay({ img: EGG_IMGS.teto, msg: 'Kasane Teto dice: <em>"Que andas presionando cosas que no son, ponte a hacer el test."</em>', duration: 3500 });
     }
   }
 });
 
+// ── 3. KONAMI CODE ────────────────────────────────────────────────
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 let konamiIdx = 0;
-
 document.addEventListener('keydown', (e) => {
   if (e.key === KONAMI[konamiIdx]) {
     konamiIdx++;
     if (konamiIdx === KONAMI.length) {
       konamiIdx = 0;
-      showOverlay({
-        img: EGG_IMGS.miku,
-        emoji: '😧',
-        msg: '↑↑↓↓←→←→<br><strong>¡Buuuuuah que pro eres!</strong>',
-        duration: 4500,
-        rain: true
-      });
+      showOverlay({ img: EGG_IMGS.miku, emoji: '😧', msg: '↑↑↓↓←→←→<br><strong>¡Buuuuuah que pro eres!</strong>', duration: 4500, rain: true });
     }
   } else {
     konamiIdx = e.key === KONAMI[0] ? 1 : 0;
   }
 });
+
 
 </script>
 </body>

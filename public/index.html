@@ -698,115 +698,121 @@ eggStyle.textContent = `
 `;
 document.head.appendChild(eggStyle);
 
-// ── 1. PUNTAJE ALTO ≥32 → Toga aparece ──────────────────────────
-const _origRender = render;
-function renderWithEgg() {
-  _origRender();
-  if (st.screen === 'result' && st.result && st.result.score >= 32) {
-    setTimeout(() => {
-      showOverlay({
-        img: "https://i.pinimg.com/736x/ff/15/c4/ff15c4ad9900f0f5313f69077737db18.jpg",
-        emoji: '',
-        msg: '¡Felicidades! <br><small style="color:#aaa">Puntaje ≥32 desbloqueado</small>',
-        duration: 4000,
-        shake: true,
-      });
-    }, 800);
-  }
-}
-// ── 2. PUNTAJE MODERADO 
-const _origRender = render;
-function renderWithEgg() {
-  _origRender();
-  if (st.screen === 'result' && st.result && st.result.score >= 21 && st.result.score <= 29) {
-    setTimeout(() => {
-      showOverlay({
-        img: "https://i.pinimg.com/736x/7e/a9/de/7ea9debe7ce24f24f62c295a1048f121.jpg",
-        emoji: '🌸',
-        msg: '¡Felicidades! <br><small style="color:#aaa">Puntaje entre 21 y 29 desbloqueado</small>',
-        duration: 4000,
-        shake: true,
-      });
-    }, 800);
-  }
-}
+// ── IMÁGENES DE EASTER EGGS ──────────────────────────────────────
+const EGG_IMGS = {
+  toga: "https://i.pinimg.com/736x/ff/15/c4/ff15c4ad9900f0f5313f69077737db18.jpg",
+  mid:  "https://i.pinimg.com/736x/7e/a9/de/7ea9debe7ce24f24f62c295a1048f121.jpg",
+  low:  "https://i.pinimg.com/736x/be/87/90/be879008fb3e8655779e7c16b24bc2df.jpg",
+  teto: "https://i.pinimg.com/736x/32/63/b9/3263b9f0b19bbe0325bd901f19a2df15.jpg",
+  miku: "https://i.pinimg.com/736x/2b/4a/68/2b4a687a6dc22912342c9e9dae2f1d1c.jpg"
+};
 
-// ── 3. PUNTAJE NORMAL 
 const _origRender = render;
 function renderWithEgg() {
   _origRender();
-  if (st.screen === 'result' && st.result && st.result.score < 20) {
+
+  if (st.screen === 'result' && st.result) {
+    const score = st.result.score;
+
     setTimeout(() => {
-      showOverlay({
-        img: "https://i.pinimg.com/736x/be/87/90/be879008fb3e8655779e7c16b24bc2df.jpg",
-        emoji: '💡',
-        msg: '¡Eres Normal!<br><small style="color:#aaa">Felicidades</small>',
-        duration: 4000,
-        shake: true,
-      });
+      if (score >= 32) {
+        showOverlay({
+          img: EGG_IMGS.toga,
+          msg: '¡Felicidades!<br><small style="color:#aaa">Puntaje ≥32 desbloqueado</small>',
+          duration: 4000,
+          shake: true
+        });
+      } else if (score >= 20) {
+        showOverlay({
+          img: EGG_IMGS.mid,
+          emoji: '🌸',
+          msg: '¡Ahí vas!<br><small style="color:#aaa">Puntaje moderado</small>',
+          duration: 4000,
+          shake: true
+        });
+      } else {
+        showOverlay({
+          img: EGG_IMGS.low,
+          emoji: '💡',
+          msg: '¡Eres Normal!<br><small style="color:#aaa">Felicidades</small>',
+          duration: 4000,
+          shake: true
+        });
+      }
     }, 800);
   }
 }
-
 
 window.render = renderWithEgg;
-// parchamos las llamadas internas también
-const _submitOld = submit;
+
 async function submit() {
-  let total = 0; const cats = [0,0,0,0,0];
+  let total = 0;
+  const cats = [0, 0, 0, 0, 0];
+
   AQ_QUESTIONS.forEach((q, i) => {
     const pts = scoreAns(q, st.ans[i] || 'td');
-    total += pts; cats[q.cat] += pts;
+    total += pts;
+    cats[q.cat] += pts;
   });
-  document.getElementById('app').innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Guardando resultado…</div></div>`;
-  const res = await api('/submit', { method: 'POST', body: { user_id: st.user.id, score: total, cats } });
-  if (res.error) { showGlobalErr(res.error); return; }
+
+  document.getElementById('app').innerHTML =
+    `<div class="card"><div class="loading"><span class="spinner"></span>Guardando resultado…</div></div>`;
+
+  const res = await api('/submit', {
+    method: 'POST',
+    body: { user_id: st.user.id, score: total, cats }
+  });
+
+  if (res.error) {
+    showGlobalErr(res.error);
+    return;
+  }
+
   st.result = { score: total, cats };
   st.screen = 'result';
   renderWithEgg();
 }
 
-// ── 3. CLICK SECRETO EN EL LOGO 🧠 (5 veces rápido) ────────────
-let logoClicks = 0, logoTimer = null;
+let logoClicks = 0;
+let logoTimer = null;
+
 document.addEventListener('click', (e) => {
   if (e.target.textContent?.includes('🧠') || e.target.closest?.('[data-logo]')) {
     logoClicks++;
     clearTimeout(logoTimer);
     logoTimer = setTimeout(() => { logoClicks = 0; }, 1500);
+
     if (logoClicks >= 5) {
       logoClicks = 0;
       showOverlay({
-        img: "https://i.pinimg.com/736x/32/63/b9/3263b9f0b19bbe0325bd901f19a2df15.jpg",
-        emoji: '',
+        img: EGG_IMGS.teto,
         msg: 'Kasane Teto dice: <em>"Que andas presionando cosas que no son, ponte a hacer el test."</em>',
-        duration: 3500,
+        duration: 3500
       });
     }
   }
 });
 
-
-// ── 4. KONAMI CODE → lluvia de emojis + Miku ────────────────────
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 let konamiIdx = 0;
+
 document.addEventListener('keydown', (e) => {
   if (e.key === KONAMI[konamiIdx]) {
     konamiIdx++;
     if (konamiIdx === KONAMI.length) {
       konamiIdx = 0;
       showOverlay({
-        img: "https://i.pinimg.com/736x/2b/4a/68/2b4a687a6dc22912342c9e9dae2f1d1c.jpg",
+        img: EGG_IMGS.miku,
         emoji: '😧',
-        msg: '↑↑↓↓←→←→<br><strong>Buuuuuah que pro eres!',
+        msg: '↑↑↓↓←→←→<br><strong>¡Buuuuuah que pro eres!</strong>',
         duration: 4500,
-        rain: true,
+        rain: true
       });
     }
   } else {
     konamiIdx = e.key === KONAMI[0] ? 1 : 0;
   }
 });
-
 
 </script>
 </body>

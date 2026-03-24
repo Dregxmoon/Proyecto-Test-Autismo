@@ -368,7 +368,6 @@ function renderResult() {
     </div>
     <div class="result-big">
       <div class="result-num">${normScore}<span class="result-denom">/100</span></div>
-      <div style="font-size:12px;color:#bbb;margin-top:4px;">Puntaje bruto: ${r.score}/50</div>
       <div style="margin-top:6px;"><span class="result-tag ${tag.cls}">${tag.label}</span></div>
     </div>
     <div style="text-align:center;margin-bottom:1.25rem;">
@@ -393,7 +392,7 @@ function renderResult() {
         return `<div style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:13px;font-weight:500;color:#1a1a1a;">${cat.icon} ${cat.name}</span>
-            <span style="font-size:12px;color:#888;">${normV}/20 pts · (bruto: ${v}/${max})</span>
+            <span style="font-size:12px;color:#888;">${normV}/20 pts</span>
           </div>
           <div style="background:#f0ede6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">
             <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:6px;"></div>
@@ -415,13 +414,14 @@ function drawChart() {
   const ctx = document.getElementById('myChart');
   if (!ctx || !r) return;
   if (chartInst) chartInst.destroy();
+  const normCatsChart = normalizeCats(r.cats);
   chartInst = new Chart(ctx, {
     type: 'radar',
     data: {
       labels: CATS,
       datasets: [{
         label: st.user.name,
-        data: normCats,
+        data: normCatsChart,
         backgroundColor: 'rgba(83,74,183,0.15)',
         borderColor: 'rgba(83,74,183,0.85)',
         borderWidth: 2,
@@ -531,7 +531,7 @@ function showProfile(idx) {
             return '<div style="margin-bottom:10px;">' +
               '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">' +
                 '<span style="font-size:12px;font-weight:500;color:#1a1a1a;">' + cat.icon + ' ' + cat.name + '</span>' +
-                '<span style="font-size:11px;color:#aaa;">' + normV + '/20</span>' +
+                '<span style="font-size:11px;color:#aaa;">' + normV + '/20 pts</span>' +
               '</div>' +
               '<div style="background:#f0ede6;border-radius:6px;height:7px;overflow:hidden;margin-bottom:4px;">' +
                 '<div style="height:100%;width:' + barPct + '%;background:' + barColor + ';border-radius:6px;"></div>' +

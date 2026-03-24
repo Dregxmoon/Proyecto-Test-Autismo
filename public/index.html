@@ -761,9 +761,9 @@ document.addEventListener('keydown', (e) => {
     if (konamiIdx === KONAMI.length) {
       konamiIdx = 0;
       showOverlay({
-        img: EGG_IMGS.miku,
-        emoji: EGG_IMGS.miku.includes('placeholder') ? '🌸' : null,
-        msg: '↑↑↓↓←→←→BA<br><strong>¡Hatsune Miku ha entrado al servidor!</strong> 🎤',
+        img: "https://i.pinimg.com/736x/2b/4a/68/2b4a687a6dc22912342c9e9dae2f1d1c.jpg",
+        emoji: '😧',
+        msg: '↑↑↓↓←→←→BA<br><strong>Buuuuuah que pro eres!',
         duration: 4500,
         rain: true,
       });
@@ -772,6 +772,7 @@ document.addEventListener('keydown', (e) => {
     konamiIdx = e.key === KONAMI[0] ? 1 : 0;
   }
 });
+
 
 </script>
 </body>

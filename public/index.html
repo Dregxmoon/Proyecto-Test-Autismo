@@ -82,6 +82,16 @@ input:focus { border-color: #7F77DD; }
 .loading { text-align: center; padding: 2rem; color: #bbb; font-size: 14px; }
 .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #eee; border-top-color: #534AB7; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.rank-row.clickable { cursor: pointer; transition: background 0.15s; }
+.rank-row.clickable:hover { background: #f5f3ff; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.2s ease; }
+.modal-box { background: #fff; border-radius: 16px; border: 0.5px solid #e0ddd8; padding: 1.5rem; width: 100%; max-width: 400px; animation: popIn 0.25s cubic-bezier(.175,.885,.32,1.275); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.modal-close { font-size: 18px; color: #ccc; cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 6px; }
+.modal-close:hover { background: #f5f5f5; color: #888; }
+.modal-chart-wrap { position: relative; height: 220px; margin: 0.75rem 0; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes popIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
 </style>
 </head>
 <body>
@@ -362,14 +372,15 @@ function renderRanking() {
       <h2 style="margin:0;">🏅 Ranking global</h2>
       <div class="logout-btn" onclick="logout()">✕ Salir</div>
     </div>
-    <p style="font-size:13px;color:#bbb;margin-bottom:1rem;">${all.length} ${all.length===1?'persona ha':'personas han'} completado el test</p>
+    <p style="font-size:13px;color:#bbb;margin-bottom:0.25rem;">${all.length} ${all.length===1?'persona ha':'personas han'} completado el test</p>
+    <p style="font-size:11px;color:#ddd;margin-bottom:1rem;">Toca un nombre para ver su gráfica 👆</p>
     ${all.length === 0 ? '<p style="color:#ddd;text-align:center;padding:2rem 0;">Nadie ha hecho el test aún</p>' :
       all.map((s, i) => {
         const tag = getTag(s.score);
         const isMe = i === myIdx;
         const posCls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
         const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
-        return `<div class="rank-row ${isMe?'me':''}">
+        return `<div class="rank-row clickable ${isMe?'me':''}" onclick="showProfile(${i})">
           <div class="rank-pos ${posCls}">${medal}</div>
           <div class="rank-info">
             <div class="rank-name">${s.name}${isMe?'<span class="me-tag">← tú</span>':''}</div>
@@ -383,6 +394,91 @@ function renderRanking() {
       }).join('')}
     <button class="btn btn-outline" onclick="backToResult()" style="margin-top:1rem;">← Mi resultado</button>
   </div>`;
+}
+
+let profileChart = null;
+function showProfile(idx) {
+  const s = (st.ranking || [])[idx];
+  if (!s || !s.cats) return;
+  const tag = getTag(s.score);
+  const old = document.getElementById('profile-modal');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'profile-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:#1a1a1a;">${s.name}</div>
+          <div style="font-size:11px;color:#bbb;">@${s.domain}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="text-align:right;">
+            <div style="font-size:22px;font-weight:700;color:#534AB7;">${s.score}<span style="font-size:13px;color:#ccc;">/50</span></div>
+            <span class="rank-badge ${tag.badge}">${tag.label}</span>
+          </div>
+          <div class="modal-close" onclick="closeProfile()">✕</div>
+        </div>
+      </div>
+      <div class="breakdown">
+        ${CATS.map((c,i) => `<div class="bd-item">
+          <div class="bd-label">${c}</div>
+          <div class="bd-val">${s.cats[i]}</div>
+          <div class="bd-max">/${CAT_MAX[i]}</div>
+        </div>`).join('')}
+      </div>
+      <div class="modal-chart-wrap"><canvas id="profileChart"></canvas></div>
+    </div>`;
+
+  modal.addEventListener('click', e => { if (e.target === modal) closeProfile(); });
+  document.body.appendChild(modal);
+
+  setTimeout(() => {
+    const ctx = document.getElementById('profileChart');
+    if (!ctx) return;
+    if (profileChart) profileChart.destroy();
+    profileChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: CATS,
+        datasets: [{
+          label: s.name,
+          data: s.cats,
+          backgroundColor: 'rgba(83,74,183,0.15)',
+          borderColor: 'rgba(83,74,183,0.85)',
+          borderWidth: 2,
+          pointBackgroundColor: '#534AB7',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0, max: Math.max(...CAT_MAX),
+            ticks: { stepSize: 2, font: { size: 10 }, color: '#bbb', backdropColor: 'transparent' },
+            grid: { color: 'rgba(0,0,0,0.06)' },
+            angleLines: { color: 'rgba(0,0,0,0.06)' },
+            pointLabels: { font: { size: 11 }, color: '#555' }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ` ${c.raw} / ${CAT_MAX[c.dataIndex]}` } }
+        }
+      }
+    });
+  }, 50);
+}
+
+function closeProfile() {
+  const modal = document.getElementById('profile-modal');
+  if (modal) modal.remove();
+  if (profileChart) { profileChart.destroy(); profileChart = null; }
 }
 
 /* ─── HELPERS ─── */
@@ -427,9 +523,9 @@ render();
 
 // ── Imágenes (cambia estas URLs por las que encuentres) ──────────
 const EGG_IMGS = {
-  toga:  'https://ih0.redbubble.net/image.618316466.8726/st%2Csmall%2C215x235-pad%2C210x230%2Cf8f8f8.u1.jpg',   // puntaje alto
-  miku:  'https://www.line-stickers.com/wp-content/uploads/2020/04/Hatsune-Miku-All-Together-.png',   // konami code
-  teto:  'https://i.pinimg.com/originals/4b/97/3c/4b973c327fc0361d0f913758e2bbe621.png',   // click secreto
+  toga:  'https://i.imgur.com/placeholder_toga.png',   // puntaje alto
+  miku:  'https://i.imgur.com/placeholder_miku.png',   // konami code
+  teto:  'https://i.imgur.com/placeholder_teto.png',   // click secreto
 };
 
 // ── Overlay helper ───────────────────────────────────────────────

@@ -178,6 +178,66 @@ function getDesc(s) {
   return "Puntaje bajo, cercano al promedio neurotípico (~16 pts). Pocos rasgos autistas según el AQ-50.";
 }
 
+function getAutismPct(score) {
+  if (score <= 0) return 2;
+  if (score >= 50) return 99;
+  if (score < 32) return Math.round(2 + (score / 32) * 78);
+  return Math.round(80 + ((score - 32) / 18) * 19);
+}
+
+const CAT_INFO = [
+  {
+    name: "Social", icon: "👥",
+    desc: (v, max) => {
+      const p = Math.round((v/max)*100);
+      if (p >= 75) return "Tienes muchas dificultades en situaciones sociales. Te cuesta leer el ambiente, seguir conversaciones grupales y entender señales no verbales.";
+      if (p >= 50) return "Algunas situaciones sociales te resultan confusas o agotadoras. Puedes manejarte, pero requiere esfuerzo.";
+      if (p >= 25) return "Te desenvuelves bien socialmente aunque a veces puedes perderte alguna señal social.";
+      return "Las habilidades sociales son tu fuerte. Lees bien a las personas y las situaciones.";
+    }
+  },
+  {
+    name: "Atención", icon: "🔍",
+    desc: (v, max) => {
+      const p = Math.round((v/max)*100);
+      if (p >= 75) return "Eres extremadamente detallista. Notas cosas que otros ignoran — sonidos, patrones, datos numéricos.";
+      if (p >= 50) return "Tienes buena atención al detalle. Sueles notar patrones más que el promedio.";
+      if (p >= 25) return "Equilibrio entre el detalle y el panorama general.";
+      return "Prefieres ver el panorama general antes que los detalles específicos.";
+    }
+  },
+  {
+    name: "Rutinas", icon: "🔄",
+    desc: (v, max) => {
+      const p = Math.round((v/max)*100);
+      if (p >= 75) return "Las rutinas son muy importantes para ti. Los cambios inesperados te generan incomodidad o estrés.";
+      if (p >= 50) return "Prefieres cierto orden y predictibilidad, aunque puedes adaptarte.";
+      if (p >= 25) return "Puedes seguir rutinas pero también disfrutas de la espontaneidad.";
+      return "Eres muy flexible y espontáneo/a. Los cambios no te afectan.";
+    }
+  },
+  {
+    name: "Imaginación", icon: "💭",
+    desc: (v, max) => {
+      const p = Math.round((v/max)*100);
+      if (p >= 75) return "Te cuesta imaginar situaciones hipotéticas, ponerte en el lugar de otros o visualizar personajes ficticios.";
+      if (p >= 50) return "Tu imaginación social es moderada. Algunas situaciones hipotéticas te cuestan más.";
+      if (p >= 25) return "Puedes imaginar bien situaciones y personajes con cierto esfuerzo.";
+      return "Tienes mucha imaginación. Visualizas fácilmente situaciones y perspectivas ajenas.";
+    }
+  },
+  {
+    name: "Datos", icon: "🔢",
+    desc: (v, max) => {
+      const p = Math.round((v/max)*100);
+      if (p >= 75) return "Tienes una fuerte tendencia a memorizar y coleccionar datos, fechas, números y categorías.";
+      if (p >= 50) return "Sueles recordar datos numéricos con más facilidad que el promedio.";
+      if (p >= 25) return "Recuerdas algunos datos pero no domina tu forma de procesar el mundo.";
+      return "No eres especialmente aficionado/a a coleccionar o memorizar datos y números.";
+    }
+  }
+];
+
 let st = { screen: 'login', tab: 'login', user: null, result: null, ans: {}, q: 0 };
 let chartInst = null;
 
@@ -285,6 +345,9 @@ function renderResult() {
   const r = st.result;
   if (!r) return '<div class="card"><p class="loading">Cargando resultado…</p></div>';
   const tag = getTag(r.score);
+  const pct = getAutismPct(r.score);
+  const pctColor = pct >= 80 ? '#A32D2D' : pct >= 50 ? '#854F0B' : '#3B6D11';
+  const pctBg = pct >= 80 ? '#FCEBEB' : pct >= 50 ? '#FAEEDA' : '#EAF3DE';
   return `<div class="card">
     <div class="nav-bar">
       <div class="nav-title">Tu resultado · ${st.user.name}</div>
@@ -294,17 +357,35 @@ function renderResult() {
       <div class="result-num">${r.score}<span class="result-denom">/50</span></div>
       <div><span class="result-tag ${tag.cls}">${tag.label}</span></div>
     </div>
+    <div style="text-align:center;margin-bottom:1.25rem;">
+      <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Índice orientativo de rasgos autistas</div>
+      <div style="background:#f0ede6;border-radius:20px;height:14px;overflow:hidden;margin:0 auto;max-width:320px;">
+        <div style="height:100%;width:${pct}%;background:${pctColor};border-radius:20px;transition:width 1s ease;"></div>
+      </div>
+      <div style="font-size:28px;font-weight:700;color:${pctColor};margin-top:6px;">${pct}%</div>
+      <div style="font-size:11px;color:#bbb;">Solo orientativo · No es diagnóstico clínico 😄</div>
+    </div>
     <div class="info-box">
       <strong>¿Qué significa?</strong><br>${getDesc(r.score)}
       <br><span style="font-size:11px;opacity:0.7;display:block;margin-top:6px;">Media poblacional: ~16.4 pts &nbsp;·&nbsp; Punto de corte clínico: ≥32</span>
     </div>
-    <h3>Puntaje por área</h3>
-    <div class="breakdown">
-      ${CATS.map((c,i) => `<div class="bd-item">
-        <div class="bd-label">${c}</div>
-        <div class="bd-val">${r.cats[i]}</div>
-        <div class="bd-max">/${CAT_MAX[i]}</div>
-      </div>`).join('')}
+    <h3>Análisis por área</h3>
+    <div style="margin-bottom:1.25rem;">
+      ${CAT_INFO.map((cat,i) => {
+        const v = r.cats[i]; const max = CAT_MAX[i];
+        const barPct = Math.round((v/max)*100);
+        const barColor = barPct >= 75 ? '#E24B4A' : barPct >= 50 ? '#BA7517' : barPct >= 25 ? '#534AB7' : '#1D9E75';
+        return `<div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:13px;font-weight:500;color:#1a1a1a;">${cat.icon} ${cat.name}</span>
+            <span style="font-size:12px;color:#888;">${v}/${max} · ${barPct}%</span>
+          </div>
+          <div style="background:#f0ede6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">
+            <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:6px;"></div>
+          </div>
+          <div style="font-size:12px;color:#666;line-height:1.5;">${cat.desc(v, max)}</div>
+        </div>`;
+      }).join('')}
     </div>
     <h3>Gráfica radar</h3>
     <div class="chart-wrap"><canvas id="myChart"></canvas></div>
@@ -422,12 +503,26 @@ function showProfile(idx) {
           <div class="modal-close" onclick="closeProfile()">✕</div>
         </div>
       </div>
-      <div class="breakdown">
-        ${CATS.map((c,i) => `<div class="bd-item">
-          <div class="bd-label">${c}</div>
-          <div class="bd-val">${s.cats[i]}</div>
-          <div class="bd-max">/${CAT_MAX[i]}</div>
-        </div>`).join('')}
+      <div style="margin:0.75rem 0;">
+        ${CAT_INFO.map((cat,i) => {
+          const v = s.cats[i]; const max = CAT_MAX[i];
+          const barPct = Math.round((v/max)*100);
+          const barColor = barPct >= 75 ? '#E24B4A' : barPct >= 50 ? '#BA7517' : barPct >= 25 ? '#534AB7' : '#1D9E75';
+          return '<div style="margin-bottom:10px;">' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">' +
+              '<span style="font-size:12px;font-weight:500;color:#1a1a1a;">' + cat.icon + ' ' + cat.name + '</span>' +
+              '<span style="font-size:11px;color:#aaa;">' + v + '/' + max + '</span>' +
+            '</div>' +
+            '<div style="background:#f0ede6;border-radius:6px;height:7px;overflow:hidden;margin-bottom:4px;">' +
+              '<div style="height:100%;width:' + barPct + '%;background:' + barColor + ';border-radius:6px;"></div>' +
+            '</div>' +
+            '<div style="font-size:11px;color:#888;line-height:1.4;">' + cat.desc(v, max) + '</div>' +
+          '</div>';
+        }).join('')}
+        <div style="text-align:center;margin-top:8px;padding:8px;background:#f5f3ff;border-radius:8px;">
+          <span style="font-size:12px;color:#534AB7;font-weight:500;">Índice de rasgos: ${getAutismPct(s.score)}%</span>
+          <span style="font-size:11px;color:#bbb;"> · Solo orientativo 😄</span>
+        </div>
       </div>
       <div class="modal-chart-wrap"><canvas id="profileChart"></canvas></div>
     </div>`;

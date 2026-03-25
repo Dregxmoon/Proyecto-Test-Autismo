@@ -462,7 +462,11 @@ async function loadRanking() {
 }
 
 function renderRanking() {
-  const all = st.ranking || [];
+  // Normalizar y reordenar por puntaje normalizado
+  const all = (st.ranking || []).map(s => ({
+    ...s,
+    normScore: s.cats ? normalizeCats(s.cats).reduce((a,b)=>a+b,0) : Math.round((s.score/50)*100)
+  })).sort((a,b) => b.normScore - a.normScore);
   const myIdx = all.findIndex(s => s.name === st.user.name);
   return `<div class="card">
     <div class="nav-bar">
@@ -473,7 +477,7 @@ function renderRanking() {
     <p style="font-size:11px;color:#ddd;margin-bottom:1rem;">Toca un nombre para ver su gráfica 👆</p>
     ${all.length === 0 ? '<p style="color:#ddd;text-align:center;padding:2rem 0;">Nadie ha hecho el test aún</p>' :
       all.map((s, i) => {
-        const tag = getTag(s.score);
+        const tag = getTag(s.normScore);
         const isMe = i === myIdx;
         const posCls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
         const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
@@ -484,7 +488,7 @@ function renderRanking() {
             <div class="rank-domain">@${s.domain}</div>
           </div>
           <div class="rank-right">
-            <div class="rank-score">${s.score}</div>
+            <div class="rank-score">${s.normScore}<span style="font-size:11px;color:#ccc;">/100</span></div>
             <span class="rank-badge ${tag.badge}">${tag.label}</span>
           </div>
         </div>`;
@@ -497,7 +501,8 @@ let profileChart = null;
 function showProfile(idx) {
   const s = (st.ranking || [])[idx];
   if (!s || !s.cats) return;
-  const tag = getTag(s.score);
+  const sNorm = s.cats ? normalizeCats(s.cats).reduce((a,b)=>a+b,0) : Math.round((s.score/50)*100);
+  const tag = getTag(sNorm);
   const old = document.getElementById('profile-modal');
   if (old) old.remove();
 
@@ -513,7 +518,7 @@ function showProfile(idx) {
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="text-align:right;">
-            <div style="font-size:22px;font-weight:700;color:#534AB7;">${s.score}<span style="font-size:13px;color:#ccc;">/50</span></div>
+            <div style="font-size:22px;font-weight:700;color:#534AB7;">${sNorm}<span style="font-size:13px;color:#ccc;">/100</span></div>
             <span class="rank-badge ${tag.badge}">${tag.label}</span>
           </div>
           <div class="modal-close" onclick="closeProfile()">✕</div>

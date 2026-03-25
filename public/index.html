@@ -456,17 +456,17 @@ async function loadRanking() {
   document.getElementById('app').innerHTML = `<div class="card"><div class="loading"><span class="spinner"></span>Cargando ranking…</div></div>`;
   const res = await api('/ranking');
   if (res.error) { showGlobalErr(res.error); return; }
-  st.ranking = res.ranking;
+  // Normalizar y reordenar una sola vez al cargar
+  st.ranking = res.ranking.map(s => ({
+    ...s,
+    normScore: s.cats ? normalizeCats(s.cats).reduce((a,b)=>a+b,0) : Math.round((s.score/50)*100)
+  })).sort((a,b) => b.normScore - a.normScore);
   st.screen = 'ranking';
   render();
 }
 
 function renderRanking() {
-  // Normalizar y reordenar por puntaje normalizado
-  const all = (st.ranking || []).map(s => ({
-    ...s,
-    normScore: s.cats ? normalizeCats(s.cats).reduce((a,b)=>a+b,0) : Math.round((s.score/50)*100)
-  })).sort((a,b) => b.normScore - a.normScore);
+  const all = st.ranking || [];
   const myIdx = all.findIndex(s => s.name === st.user.name);
   return `<div class="card">
     <div class="nav-bar">
@@ -501,7 +501,7 @@ let profileChart = null;
 function showProfile(idx) {
   const s = (st.ranking || [])[idx];
   if (!s || !s.cats) return;
-  const sNorm = s.cats ? normalizeCats(s.cats).reduce((a,b)=>a+b,0) : Math.round((s.score/50)*100);
+  const sNorm = s.normScore !== undefined ? s.normScore : (s.cats ? normalizeCats(s.cats).reduce((a,b)=>a+b,0) : Math.round((s.score/50)*100));
   const tag = getTag(sNorm);
   const old = document.getElementById('profile-modal');
   if (old) old.remove();

@@ -265,7 +265,10 @@ function render() {
   const app = document.getElementById('app');
   if (st.screen === 'login')   app.innerHTML = renderAuth();
   else if (st.screen === 'test')    app.innerHTML = renderTest();
-  else if (st.screen === 'result')  { app.innerHTML = renderResult(); setTimeout(drawChart, 60); }
+  else if (st.screen === 'result') {
+    if (st.showMajorPrompt) { app.innerHTML = renderMajorPrompt(); return; }
+    app.innerHTML = renderResult(); setTimeout(drawChart, 60);
+  }
   else if (st.screen === 'ranking') app.innerHTML = renderRanking();
 }
 
@@ -292,6 +295,8 @@ function renderAuth() {
       <input type="email" id="em" placeholder="nombre@universidad.edu" />
       <label>Contraseña</label>
       <input type="password" id="pw" placeholder="Mínimo 6 caracteres" />
+      <label>Carrera <span style="color:#bbb;font-weight:400;">(opcional)</span></label>
+      <input type="text" id="major" placeholder="Ej: Ingeniería en Sistemas, Medicina…" />
       <div id="err"></div>
       <button class="btn" id="regBtn" onclick="doRegister()">Crear cuenta y comenzar</button>
     `}
@@ -307,15 +312,21 @@ async function doLogin() {
   if (res.error) return showErr(res.error);
   st.user = res.user;
   st.result = res.result;
-  st.screen = res.result ? 'result' : 'test';
+  // Si no tiene carrera guardada, mostrar prompt opcional
+  if (!res.user.major && res.result) {
+    st.screen = 'result';
+    st.showMajorPrompt = true;
+  } else {
+    st.screen = res.result ? 'result' : 'test';
+  }
   st.ans = {}; st.q = 0;
   render();
 }
 
 async function doRegister() {
-  const nm = val('nm'), em = val('em'), pw = val('pw');
+  const nm = val('nm'), em = val('em'), pw = val('pw'), mj = val('major');
   setBtnLoad('regBtn', true);
-  const res = await api('/register', { method: 'POST', body: { name: nm, email: em, password: pw } });
+  const res = await api('/register', { method: 'POST', body: { name: nm, email: em, password: pw, major: mj || null } });
   setBtnLoad('regBtn', false);
   if (res.error) return showErr(res.error);
   st.user = res.user;
@@ -350,6 +361,39 @@ function renderTest() {
       </button>
     </div>
   </div>`;
+}
+
+/* ─── MAJOR PROMPT ─── */
+function renderMajorPrompt() {
+  return `<div class="card" style="text-align:center;">
+    <div style="font-size:32px;margin-bottom:0.75rem;">🎓</div>
+    <h2>¡Hola de nuevo, ${st.user.name}!</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;">
+      El test ahora incluye el campo de <strong>carrera</strong>.<br>
+      ¿Quieres agregar la tuya al ranking? Es opcional.
+    </p>
+    <label style="text-align:left;">Tu carrera</label>
+    <input type="text" id="majorInput" placeholder="Ej: Ingeniería en Sistemas, Medicina…" style="margin-bottom:0.5rem;" />
+    <button class="btn" onclick="saveMajor()">Guardar carrera</button>
+    <button class="btn btn-outline" onclick="skipMajor()" style="margin-top:0.5rem;">Omitir por ahora</button>
+  </div>`;
+}
+
+async function saveMajor() {
+  const major = (document.getElementById('majorInput')||{}).value?.trim();
+  if (major) {
+    await api('/update-major', { method: 'POST', body: { user_id: st.user.id, major } });
+    st.user.major = major;
+  }
+  st.showMajorPrompt = false;
+  st.screen = 'result';
+  render();
+}
+
+function skipMajor() {
+  st.showMajorPrompt = false;
+  st.screen = 'result';
+  render();
 }
 
 /* ─── RESULT ─── */
@@ -485,7 +529,7 @@ function renderRanking() {
           <div class="rank-pos ${posCls}">${medal}</div>
           <div class="rank-info">
             <div class="rank-name">${s.name}${isMe?'<span class="me-tag">← tú</span>':''}</div>
-            <div class="rank-domain">@${s.domain}</div>
+            <div class="rank-domain">${s.major ? s.major + ' · ' : ''}@${s.domain}</div>
           </div>
           <div class="rank-right">
             <div class="rank-score">${s.normScore}<span style="font-size:11px;color:#ccc;">/100</span></div>
@@ -514,7 +558,7 @@ function showProfile(idx) {
       <div class="modal-header">
         <div>
           <div style="font-size:15px;font-weight:600;color:#1a1a1a;">${s.name}</div>
-          <div style="font-size:11px;color:#bbb;">@${s.domain}</div>
+          <div style="font-size:11px;color:#bbb;">${s.major ? s.major + ' · ' : ''}@${s.domain}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="text-align:right;">

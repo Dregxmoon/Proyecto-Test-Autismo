@@ -199,7 +199,7 @@ function getAutismPct(score) {
 
 const CAT_INFO = [
   {
-    name: "Social", icon: "👥",
+    name: "Social", icon: "",
     desc: (v, max) => {
       const p = Math.round((v/max)*100);
       if (p >= 75) return "Tienes muchas dificultades en situaciones sociales. Te cuesta leer el ambiente, seguir conversaciones grupales y entender señales no verbales.";
@@ -209,7 +209,7 @@ const CAT_INFO = [
     }
   },
   {
-    name: "Atención", icon: "🔍",
+    name: "Atención", icon: "",
     desc: (v, max) => {
       const p = Math.round((v/max)*100);
       if (p >= 75) return "Eres extremadamente detallista. Notas cosas que otros ignoran — sonidos, patrones, datos numéricos.";
@@ -219,7 +219,7 @@ const CAT_INFO = [
     }
   },
   {
-    name: "Rutinas", icon: "🔄",
+    name: "Rutinas", icon: "",
     desc: (v, max) => {
       const p = Math.round((v/max)*100);
       if (p >= 75) return "Las rutinas son muy importantes para ti. Los cambios inesperados te generan incomodidad o estrés.";
@@ -229,7 +229,7 @@ const CAT_INFO = [
     }
   },
   {
-    name: "Imaginación", icon: "💭",
+    name: "Imaginación", icon: "",
     desc: (v, max) => {
       const p = Math.round((v/max)*100);
       if (p >= 75) return "Te cuesta imaginar situaciones hipotéticas, ponerte en el lugar de otros o visualizar personajes ficticios.";
@@ -239,7 +239,7 @@ const CAT_INFO = [
     }
   },
   {
-    name: "Datos", icon: "🔢",
+    name: "Datos", icon: "",
     desc: (v, max) => {
       const p = Math.round((v/max)*100);
       if (p >= 75) return "Tienes una fuerte tendencia a memorizar y coleccionar datos, fechas, números y categorías.";
@@ -275,7 +275,7 @@ function render() {
 /* ─── AUTH ─── */
 function renderAuth() {
   return `<div class="card">
-    <h1>🧠 Test AQ-50</h1>
+    <h1>Test AQ-50</h1>
     <p class="subtitle">El Cociente de Espectro Autista (Baron-Cohen et al., 2001). 50 preguntas sobre habilidades sociales, atención, comunicación e imaginación.<br><strong style="color:#534AB7">Solo puedes hacerlo una vez por cuenta.</strong></p>
     <div class="tabs">
       <div class="tab ${st.tab==='login'?'active':''}" onclick="sw('login')">Iniciar sesión</div>
@@ -296,7 +296,45 @@ function renderAuth() {
       <label>Contraseña</label>
       <input type="password" id="pw" placeholder="Mínimo 6 caracteres" />
       <label>Carrera <span style="color:#bbb;font-weight:400;">(opcional)</span></label>
-      <input type="text" id="major" placeholder="Ej: Ingeniería en Sistemas, Ingenieria Industrial, Bioquimica, Aeronautica" />
+      <select id="major" style="width:100%;padding:10px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;outline:none;color:#1a1a1a;background:#fff;appearance:none;-webkit-appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center;">
+        <option value="">-- Selecciona tu carrera --</option>
+        <optgroup label="Ingeniería y Tecnología">
+          <option>Ingeniería en Sistemas Computacionales</option>
+          <option>Ingeniería en Tecnologías de la Información y Comunicaciones</option>
+          <option>Ingeniería Informática</option>
+          <option>Ingeniería Industrial</option>
+          <option>Ingeniería Mecatrónica</option>
+          <option>Ingeniería Electrónica</option>
+          <option>Ingeniería Eléctrica</option>
+          <option>Ingeniería Mecánica</option>
+          <option>Ingeniería Civil</option>
+          <option>Ingeniería Química</option>
+          <option>Ingeniería Biomédica</option>
+          <option>Ingeniería en Logística</option>
+          <option>Ingeniería en Administración</option>
+          <option>Ingeniería en Gestión Empresarial</option>
+          <option>Ingeniería en Energías Renovables</option>
+          <option>Ingeniería en Aeronáutica</option>
+          <option>Ingeniería en Materiales</option>
+          <option>Ingeniería en Nanotecnología</option>
+        </optgroup>
+        <optgroup label="Ciencias y Exactas">
+          <option>Licenciatura en Biología</option>
+          <option>Licenciatura en Matemáticas</option>
+          <option>Licenciatura en Física</option>
+          <option>Licenciatura en Química</option>
+        </optgroup>
+        <optgroup label="Negocios y Administración">
+          <option>Licenciatura en Administración</option>
+          <option>Licenciatura en Contaduría</option>
+          <option>Licenciatura en Negocios Internacionales</option>
+          <option>Licenciatura en Mercadotecnia</option>
+          <option>Maestría en Administración</option>
+        </optgroup>
+        <optgroup label="Otras instituciones">
+          <option>Otra carrera</option>
+        </optgroup>
+      </select>
       <div id="err"></div>
       <button class="btn" id="regBtn" onclick="doRegister()">Crear cuenta y comenzar</button>
     `}
@@ -342,7 +380,7 @@ function renderTest() {
   const sel = st.ans[st.q];
   return `<div class="card">
     <div class="nav-bar">
-      <div class="nav-title">🧠 Test AQ-50</div>
+      <div class="nav-title">Test AQ-50</div>
       <div class="logout-btn" onclick="logout()">✕ Salir</div>
     </div>
     <div class="progress-wrap">
@@ -366,14 +404,52 @@ function renderTest() {
 /* ─── MAJOR PROMPT ─── */
 function renderMajorPrompt() {
   return `<div class="card" style="text-align:center;">
-    <div style="font-size:32px;margin-bottom:0.75rem;">🎓</div>
+    <div style="font-size:32px;margin-bottom:0.75rem;"></div>
     <h2>¡Hola de nuevo, ${st.user.name}!</h2>
     <p style="font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.6;">
       El test ahora incluye el campo de <strong>carrera</strong>.<br>
       ¿Quieres agregar la tuya al ranking? Es opcional.
     </p>
-    <label style="text-align:left;">Tu carrera</label>
-    <input type="text" id="majorInput" placeholder="Ej: Ingeniería en Sistemas, Medicina…" style="margin-bottom:0.5rem;" />
+    <label style="text-align:left;display:block;margin-bottom:4px;">Tu carrera</label>
+    <select id="majorInput" style="width:100%;padding:10px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;outline:none;color:#1a1a1a;background:#fff;appearance:none;-webkit-appearance:none;margin-bottom:0.5rem;">
+      <option value="">-- Selecciona tu carrera --</option>
+      <optgroup label="Ingeniería y Tecnología">
+        <option>Ingeniería en Sistemas Computacionales</option>
+        <option>Ingeniería en Tecnologías de la Información y Comunicaciones</option>
+        <option>Ingeniería Informática</option>
+        <option>Ingeniería Industrial</option>
+        <option>Ingeniería Mecatrónica</option>
+        <option>Ingeniería Electrónica</option>
+        <option>Ingeniería Eléctrica</option>
+        <option>Ingeniería Mecánica</option>
+        <option>Ingeniería Civil</option>
+        <option>Ingeniería Química</option>
+        <option>Ingeniería Biomédica</option>
+        <option>Ingeniería en Logística</option>
+        <option>Ingeniería en Administración</option>
+        <option>Ingeniería en Gestión Empresarial</option>
+        <option>Ingeniería en Energías Renovables</option>
+        <option>Ingeniería en Aeronáutica</option>
+        <option>Ingeniería en Materiales</option>
+        <option>Ingeniería en Nanotecnología</option>
+      </optgroup>
+      <optgroup label="Ciencias y Exactas">
+        <option>Licenciatura en Biología</option>
+        <option>Licenciatura en Matemáticas</option>
+        <option>Licenciatura en Física</option>
+        <option>Licenciatura en Química</option>
+      </optgroup>
+      <optgroup label="Negocios y Administración">
+        <option>Licenciatura en Administración</option>
+        <option>Licenciatura en Contaduría</option>
+        <option>Licenciatura en Negocios Internacionales</option>
+        <option>Licenciatura en Mercadotecnia</option>
+        <option>Maestría en Administración</option>
+      </optgroup>
+      <optgroup label="Otras instituciones">
+        <option>Otra carrera</option>
+      </optgroup>
+    </select>
     <button class="btn" onclick="saveMajor()">Guardar carrera</button>
     <button class="btn btn-outline" onclick="skipMajor()" style="margin-top:0.5rem;">Omitir por ahora</button>
   </div>`;
@@ -420,7 +496,7 @@ function renderResult() {
         <div style="height:100%;width:${pct}%;background:${pctColor};border-radius:20px;transition:width 1s ease;"></div>
       </div>
       <div style="font-size:28px;font-weight:700;color:${pctColor};margin-top:6px;">${pct}%</div>
-      <div style="font-size:11px;color:#bbb;">Solo orientativo · No es diagnóstico clínico 😄</div>
+      <div style="font-size:11px;color:#bbb;">Solo orientativo · No es diagnóstico clínico </div>
     </div>
     <div class="info-box">
       <strong>¿Qué significa?</strong><br>${getDesc(normScore)}
@@ -435,7 +511,7 @@ function renderResult() {
         const barColor = barPct >= 75 ? '#E24B4A' : barPct >= 50 ? '#BA7517' : barPct >= 25 ? '#534AB7' : '#1D9E75';
         return `<div style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span style="font-size:13px;font-weight:500;color:#1a1a1a;">${cat.icon} ${cat.name}</span>
+            <span style="font-size:13px;font-weight:500;color:#1a1a1a;">${cat.name}</span>
             <span style="font-size:12px;color:#888;">${normV}/20 pts</span>
           </div>
           <div style="background:#f0ede6;border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">
@@ -448,7 +524,7 @@ function renderResult() {
     <h3>Gráfica radar</h3>
     <div class="chart-wrap"><canvas id="myChart"></canvas></div>
     <div class="divider"></div>
-    <button class="btn" onclick="loadRanking()">Ver ranking completo 🏅</button>
+    <button class="btn" onclick="loadRanking()">Ver ranking completo</button>
     <p style="font-size:11px;color:#ccc;text-align:center;margin-top:1rem;">Este test es orientativo. No constituye diagnóstico clínico.</p>
   </div>`;
 }
@@ -514,11 +590,11 @@ function renderRanking() {
   const myIdx = all.findIndex(s => s.name === st.user.name);
   return `<div class="card">
     <div class="nav-bar">
-      <h2 style="margin:0;">🏅 Ranking global</h2>
+      <h2 style="margin:0;"> Ranking global</h2>
       <div class="logout-btn" onclick="logout()">✕ Salir</div>
     </div>
     <p style="font-size:13px;color:#bbb;margin-bottom:0.25rem;">${all.length} ${all.length===1?'persona ha':'personas han'} completado el test</p>
-    <p style="font-size:11px;color:#ddd;margin-bottom:1rem;">Toca un nombre para ver su gráfica 👆</p>
+    <p style="font-size:11px;color:#ddd;margin-bottom:1rem;">Toca un nombre para ver su grafica</p>
     ${all.length === 0 ? '<p style="color:#ddd;text-align:center;padding:2rem 0;">Nadie ha hecho el test aún</p>' :
       all.map((s, i) => {
         const tag = getTag(s.normScore);
@@ -579,7 +655,7 @@ function showProfile(idx) {
             const barColor = barPct >= 75 ? '#E24B4A' : barPct >= 50 ? '#BA7517' : barPct >= 25 ? '#534AB7' : '#1D9E75';
             return '<div style="margin-bottom:10px;">' +
               '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">' +
-                '<span style="font-size:12px;font-weight:500;color:#1a1a1a;">' + cat.icon + ' ' + cat.name + '</span>' +
+                '<span style="font-size:12px;font-weight:500;color:#1a1a1a;">' + cat.name + '</span>' +
                 '<span style="font-size:11px;color:#aaa;">' + normV + '/20 pts</span>' +
               '</div>' +
               '<div style="background:#f0ede6;border-radius:6px;height:7px;overflow:hidden;margin-bottom:4px;">' +
@@ -590,7 +666,7 @@ function showProfile(idx) {
           }).join('') +
           '<div style="text-align:center;margin-top:8px;padding:8px;background:#f5f3ff;border-radius:8px;">' +
             '<span style="font-size:12px;color:#534AB7;font-weight:500;">Índice de rasgos: ' + getAutismPct(sNormTotal) + '%</span>' +
-            '<span style="font-size:11px;color:#bbb;"> · Solo orientativo 😄</span>' +
+            '<span style="font-size:11px;color:#bbb;"> · Solo orientativo </span>' +
           '</div>';
         })()}
       </div>

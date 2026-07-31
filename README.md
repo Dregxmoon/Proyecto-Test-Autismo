@@ -246,19 +246,6 @@ create policy "Bloquear acceso publico results" on results for all using (false)
 
 ---
 
-##  👾 Problemas Detectados al Realizar el Proyecto
-
-**El login se queda cargando**
-→ Verifica que las variables de entorno en Vercel estén exactamente como aparecen en Supabase.
-
-**Error al hacer Deploy**
-→ Los archivos deben estar en la raíz del repo, no dentro de una carpeta.
-
-**Warning "RLS Disabled" en Supabase**
-→ Ejecuta en SQL Editor: `ALTER TABLE users ENABLE ROW LEVEL SECURITY;`
-
----
-
 ## 📚 Referencia
 
 Baron-Cohen, S., Wheelwright, S., Skinner, R., Martin, J., & Clubley, E. (2001). *The Autism-Spectrum Quotient (AQ): Evidence from Asperger Syndrome/High-Functioning Autism, Males and Females, Scientists and Mathematicians.* Journal of Autism and Developmental Disorders, 31(1), 5–17.

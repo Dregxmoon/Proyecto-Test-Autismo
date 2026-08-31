@@ -154,22 +154,6 @@ Las preguntas se agrupan en 5 áreas:
 
 ---
 
-## 📁 Estructura del proyecto
-
-```
-├── api/
-│   ├── login.js        ← POST /api/login
-│   ├── register.js     ← POST /api/register
-│   ├── submit.js       ← POST /api/submit
-│   └── ranking.js      ← GET  /api/ranking
-├── public/
-│   └── index.html      ← Toda la UI (login, test, resultado, ranking)
-├── package.json        ← Solo una dependencia: @supabase/supabase-js
-└── vercel.json         ← Rutas + headers de seguridad HTTP
-```
-
----
-
 ## 🚀 Cómo desplegarlo (gratis)
 
 ### Paso 1 — Base de datos en Supabase

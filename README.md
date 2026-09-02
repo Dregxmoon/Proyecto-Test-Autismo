@@ -141,19 +141,6 @@ Las preguntas se agrupan en 5 áreas:
 
 ---
 
-## 🛠️ Stack completo
-
-| Capa | Tecnología | Versión |
-|------|-----------|---------|
-| Frontend | HTML + CSS + JS Vanilla | — |
-| Gráficas | Chart.js | 4.4.1 |
-| API | Node.js (Vercel Serverless) | 18+ |
-| Base de datos | PostgreSQL (Supabase) | 15 |
-| Hosting | Vercel | — |
-| Crypto | Node.js `crypto` (nativo) | — |
-
----
-
 ## 🚀 Cómo desplegarlo (gratis)
 
 ### Paso 1 — Base de datos en Supabase
